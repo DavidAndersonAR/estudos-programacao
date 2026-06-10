@@ -1,0 +1,99 @@
+# 🎯 DESAFIO MÓDULO 02 — Init container preparando config pro app
+#
+# Objetivo: completar este YAML pra que:
+#   1. Um init container gere o arquivo /shared/config.json
+#      com algum conteúdo (ex: {"versao":"1.0","ambiente":"dev"}).
+#   2. O container principal (busybox) leia esse arquivo e imprima no log,
+#      depois fique vivo pra você poder fazer exec.
+#   3. Os dois compartilhem um volume emptyDir chamado "config-vol"
+#      montado em /shared.
+#
+# Apply: kubectl apply -f pod.yaml
+# Conferir: kubectl logs init-desafio -c app
+#
+# Solução comentada no final.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: init-desafio
+  labels:
+    desafio: modulo-02
+spec:
+  restartPolicy: OnFailure
+
+  # TODO 1: declarar o volume emptyDir chamado "config-vol"
+  # volumes:
+  #   - name: ???
+  #     emptyDir: {}
+
+  # TODO 2: criar um initContainer chamado "gera-config"
+  # - imagem: busybox
+  # - command: gerar /shared/config.json com algum JSON simples
+  # - montar config-vol em /shared
+  # initContainers:
+  #   - name: ???
+  #     image: ???
+  #     command: ["sh", "-c", "echo '...' > /shared/config.json"]
+  #     volumeMounts:
+  #       - name: ???
+  #         mountPath: /shared
+
+  containers:
+    # TODO 3: container "app" que lê o config e fica vivo
+    # - imagem: busybox
+    # - command: cat /shared/config.json e depois sleep 3600
+    # - montar config-vol em /shared
+    - name: app
+      image: busybox
+      command: ["sh", "-c", "echo TODO: leia /shared/config.json && sleep 3600"]
+      # volumeMounts:
+      #   - name: ???
+      #     mountPath: /shared
+
+# =====================================================================
+# SOLUÇÃO DE REFERÊNCIA (apague o bloco acima e use este pra conferir):
+# =====================================================================
+#
+# apiVersion: v1
+# kind: Pod
+# metadata:
+#   name: init-desafio
+#   labels:
+#     desafio: modulo-02
+# spec:
+#   restartPolicy: OnFailure
+#
+#   volumes:
+#     - name: config-vol
+#       emptyDir: {}
+#
+#   initContainers:
+#     - name: gera-config
+#       image: busybox
+#       command:
+#         - sh
+#         - -c
+#         - |
+#           echo "[init] gerando config..."
+#           echo '{"versao":"1.0","ambiente":"dev","feature_x":true}' > /shared/config.json
+#           echo "[init] pronto."
+#       volumeMounts:
+#         - name: config-vol
+#           mountPath: /shared
+#
+#   containers:
+#     - name: app
+#       image: busybox
+#       command:
+#         - sh
+#         - -c
+#         - |
+#           echo "[app] config recebida do init:"
+#           cat /shared/config.json
+#           echo ""
+#           echo "[app] dormindo pra você poder dar exec..."
+#           sleep 3600
+#       volumeMounts:
+#         - name: config-vol
+#           mountPath: /shared

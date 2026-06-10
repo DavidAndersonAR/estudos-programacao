@@ -1,0 +1,70 @@
+# Multi-doc YAML — 3 pods no mesmo arquivo, separados por ---
+# Útil pra agrupar recursos relacionados (ex: front + cache + worker do mesmo app).
+#
+# Aplicar:    kubectl apply -f multi.yaml
+# Listar:     kubectl get pods -l projeto=multi
+# Apagar:     kubectl delete -f multi.yaml
+
+# ============================================================
+# POD 1 — frontend (nginx)
+# ============================================================
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-front
+  labels:
+    projeto: multi
+    componente: frontend
+spec:
+  restartPolicy: Always
+  containers:
+    - name: nginx
+      image: nginx:1.27-alpine
+      ports:
+        - containerPort: 80
+
+---
+
+# ============================================================
+# POD 2 — cache (redis)
+# ============================================================
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-cache
+  labels:
+    projeto: multi
+    componente: cache
+spec:
+  restartPolicy: Always
+  containers:
+    - name: redis
+      image: redis:7-alpine
+      ports:
+        - containerPort: 6379
+
+---
+
+# ============================================================
+# POD 3 — worker (busybox dormindo, simulando processo de fundo)
+# ============================================================
+apiVersion: v1
+kind: Pod
+metadata:
+  name: multi-worker
+  labels:
+    projeto: multi
+    componente: worker
+spec:
+  # Worker que terminou seu trabalho não deve reiniciar.
+  restartPolicy: OnFailure
+  containers:
+    - name: worker
+      image: busybox:1.36
+      # Precisa de um comando que mantenha o container vivo — senão termina e o
+      # pod fica em CrashLoopBackOff (com Always) ou Completed (com OnFailure/Never).
+      command: ["sh", "-c"]
+      args:
+        - |
+          echo "worker iniciado em $(date)"
+          sleep 3600

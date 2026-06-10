@@ -1,0 +1,109 @@
+# 🎯 DESAFIO DO MÓDULO 03 — Complete o manifest
+#
+# Esse arquivo está QUEBRADO de propósito. Você precisa completar os TODOs
+# pra fazer um Pod válido que atenda aos requisitos abaixo.
+#
+# REQUISITOS:
+# 1. Nome do pod: "api-pedidos"
+# 2. Namespace: "default" (ou explicito)
+# 3. Labels OBRIGATÓRIAS:
+#       app=pedidos, tier=backend, env=prod, versao=v2
+# 4. Annotations OBRIGATÓRIAS:
+#       descricao="API de pedidos da loja"
+#       responsavel="seu-email@exemplo.com"
+# 5. Container chamado "api" usando imagem "nginx:1.27-alpine"
+#    (na vida real seria uma imagem da sua API — nginx só pra ter algo que sobe)
+# 6. Container expõe porta 8080 (mesmo que nginx use 80 — é só pra você
+#    treinar a sintaxe de ports; depois ajuste pra refletir a app real)
+# 7. Recursos:
+#       requests: cpu 100m, memory 128Mi
+#       limits:   cpu 500m, memory 256Mi
+# 8. restartPolicy: Always
+# 9. Variável de ambiente: AMBIENTE=producao
+#
+# COMO TESTAR:
+#   kubectl apply -f pod.yaml
+#   kubectl get pod api-pedidos -o wide
+#   kubectl describe pod api-pedidos
+#   kubectl get pod api-pedidos -o jsonpath='{.metadata.labels}'
+#
+# 💡 DICAS:
+#   - Se travar num campo, use: kubectl explain Pod.spec.containers
+#   - Erros do apply te dizem qual linha tá errada. LEIA a mensagem.
+#   - Indentação é com ESPAÇOS, nunca TAB.
+#   - A solução de referência está no FIM deste arquivo, comentada.
+
+# ============================
+# SEU MANIFEST ABAIXO
+# ============================
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: # TODO 1: nome do pod
+  labels:
+    # TODO 2: 4 labels obrigatórias
+    app:
+    # ...
+  annotations:
+    # TODO 3: 2 annotations obrigatórias
+    descricao:
+    # ...
+spec:
+  # TODO 4: restartPolicy
+  # restartPolicy:
+  containers:
+    - name: # TODO 5: nome do container
+      image: # TODO 6: imagem
+      ports:
+        # TODO 7: porta 8080
+        - containerPort:
+      resources:
+        # TODO 8: requests e limits
+        requests:
+          cpu:
+          memory:
+        limits:
+          cpu:
+          memory:
+      env:
+        # TODO 9: AMBIENTE=producao
+        - name:
+          value:
+
+# ============================
+# SOLUÇÃO DE REFERÊNCIA
+# (apague o "# " do início das linhas pra testar — ou copie pra outro arquivo)
+# ============================
+#
+# apiVersion: v1
+# kind: Pod
+# metadata:
+#   name: api-pedidos
+#   labels:
+#     app: pedidos
+#     tier: backend
+#     env: prod
+#     versao: v2
+#   annotations:
+#     descricao: "API de pedidos da loja"
+#     responsavel: "seu-email@exemplo.com"
+# spec:
+#   restartPolicy: Always
+#   containers:
+#     - name: api
+#       image: nginx:1.27-alpine
+#       ports:
+#         - containerPort: 8080
+#           name: http
+#           protocol: TCP
+#       resources:
+#         requests:
+#           cpu: "100m"
+#           memory: "128Mi"
+#         limits:
+#           cpu: "500m"
+#           memory: "256Mi"
+#       env:
+#         - name: AMBIENTE
+#           value: "producao"

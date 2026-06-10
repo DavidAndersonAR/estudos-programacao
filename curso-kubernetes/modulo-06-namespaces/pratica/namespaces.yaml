@@ -1,0 +1,26 @@
+# 3 namespaces: dev, staging, prod
+# Aplica com: kubectl apply -f namespaces.yaml
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev
+  labels:
+    ambiente: dev
+    time: estudo
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: staging
+  labels:
+    ambiente: staging
+    time: estudo
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: prod
+  labels:
+    ambiente: prod
+    time: estudo

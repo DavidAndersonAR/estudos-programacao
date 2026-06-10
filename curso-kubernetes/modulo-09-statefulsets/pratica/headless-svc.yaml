@@ -1,0 +1,26 @@
+# Headless Service — clusterIP: None
+#
+# Por que headless?
+# - Não cria IP virtual nem faz load balancing
+# - Cria entradas DNS individuais pra cada pod do StatefulSet:
+#     app-0.app-svc.default.svc.cluster.local
+#     app-1.app-svc.default.svc.cluster.local
+#     app-2.app-svc.default.svc.cluster.local
+# - É REQUISITO pra StatefulSet ter DNS estável por pod
+#
+# O StatefulSet referencia este Service no campo spec.serviceName.
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-svc
+  labels:
+    app: web
+spec:
+  clusterIP: None          # 👈 isso aqui que torna o Service "headless"
+  selector:
+    app: web               # bate com o label dos pods do StatefulSet
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80

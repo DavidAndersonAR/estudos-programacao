@@ -1,0 +1,36 @@
+# Deployment parametrizado por Helm.
+# Tudo entre {{ ... }} é template Go + Sprig — renderizado na hora do install.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # .Release.Name = nome que vc passa no helm install (ex: "meuapp-dev").
+  # Misturando com .Chart.Name garante nome unico mesmo se reusar release.
+  name: {{ .Release.Name }}-{{ .Chart.Name }}
+  labels:
+    app: {{ .Chart.Name }}
+    release: {{ .Release.Name }}
+spec:
+  # .Values vem do values.yaml (e dos overrides -f / --set).
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        # Concatenacao de strings — aspas obrigatorias pq tem ":".
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.service.targetPort }}
+          name: http
+        # toYaml + nindent renderiza um bloco YAML inteiro com indentacao certa.
+        # Se resources for {} (vazio), o bloco fica vazio e o K8s ignora — ok.
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}

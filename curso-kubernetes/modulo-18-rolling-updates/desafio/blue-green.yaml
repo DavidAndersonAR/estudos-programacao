@@ -1,0 +1,107 @@
+# 🎯 DESAFIO — Blue/Green manual
+#
+# Cenário:
+# - Deployment "shop-blue" rodando v1 (estável, recebendo 100% do tráfego).
+# - Deployment "shop-green" rodando v2 (warm, sem tráfego ainda).
+# - Service "shop" tem selector apontando pra blue.
+# - Cutover = mudar o selector do Service pra "green".
+# - Rollback = mudar o selector de volta pra "blue".
+#
+# Sua missão:
+#   1. Aplicar este arquivo (sobe blue + green + service).
+#   2. Confirmar que o Service só está roteando pra blue.
+#   3. Testar green isoladamente (sem mexer no Service principal).
+#   4. Fazer cutover pra green.
+#   5. Validar; se algo der errado, fazer rollback pra blue.
+#
+# Ver desafio/comandos.sh pros TODOs e a solução de referência.
+---
+# ===== Deployment BLUE (v1) =====
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-blue
+  labels:
+    app: shop
+    version: blue
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: shop
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: shop
+        version: blue   # ← label que o Service vai casar
+    spec:
+      containers:
+        - name: web
+          image: hashicorp/http-echo:0.2.3
+          args: ["-text=BLUE v1", "-listen=:5678"]
+          ports:
+            - containerPort: 5678
+          readinessProbe:
+            httpGet: { path: /, port: 5678 }
+            initialDelaySeconds: 1
+            periodSeconds: 2
+---
+# ===== Deployment GREEN (v2) =====
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-green
+  labels:
+    app: shop
+    version: green
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: shop
+      version: green
+  template:
+    metadata:
+      labels:
+        app: shop
+        version: green   # ← label diferente; Service NÃO casa enquanto não trocar
+    spec:
+      containers:
+        - name: web
+          image: hashicorp/http-echo:0.2.3
+          args: ["-text=GREEN v2", "-listen=:5678"]
+          ports:
+            - containerPort: 5678
+          readinessProbe:
+            httpGet: { path: /, port: 5678 }
+            initialDelaySeconds: 1
+            periodSeconds: 2
+---
+# ===== Service principal (roteia pelo selector) =====
+# Começa apontando pra BLUE. Cutover = patch trocando version pra green.
+apiVersion: v1
+kind: Service
+metadata:
+  name: shop
+spec:
+  selector:
+    app: shop
+    version: blue     # ← isso aqui é o "switch" do blue/green
+  ports:
+    - port: 80
+      targetPort: 5678
+---
+# ===== Service de teste (sempre aponta pra green, pra testar antes do cutover) =====
+# Truque comum: ter um Service "preview" que sempre bate na versão nova.
+apiVersion: v1
+kind: Service
+metadata:
+  name: shop-preview
+spec:
+  selector:
+    app: shop
+    version: green
+  ports:
+    - port: 80
+      targetPort: 5678

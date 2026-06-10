@@ -1,0 +1,148 @@
+# 🎯 DESAFIO DO MODULO 07 — Nginx customizado via ConfigMap + TLS via Secret
+#
+# Objetivo:
+# Subir um nginx que:
+#   1. Usa um nginx.conf CUSTOMIZADO (vindo de um ConfigMap, montado em /etc/nginx/)
+#   2. Serve HTTPS usando um certificado TLS (vindo de um Secret kubernetes.io/tls)
+#   3. Le uma variavel APP_ENV de um ConfigMap separado
+#   4. Le uma SENHA_ADMIN de um Secret separado (envFrom)
+#
+# Voce vai precisar de:
+#   - 2 ConfigMaps (1 com nginx.conf, 1 com vars)
+#   - 2 Secrets (1 TLS, 1 com SENHA_ADMIN)
+#   - 1 Deployment
+#
+# Os TODOs estao abaixo. A SOLUCAO completa esta no fim, comentada.
+# Tente fazer sozinho ANTES de olhar.
+# Pra gerar o cert TLS de teste: veja desafio/comandos.sh
+
+# ============================================================
+# TODO 1: ConfigMap "nginx-conf" com a chave 'nginx.conf'
+# - Deve escutar 443 com SSL, usar /etc/nginx/tls/tls.crt e tls.key
+# - Deve servir um HTML simples em /
+# ============================================================
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: nginx-conf
+# data:
+#   nginx.conf: |
+#     # SEU NGINX.CONF AQUI
+
+# ---
+# ============================================================
+# TODO 2: ConfigMap "app-vars" com APP_ENV=producao
+# ============================================================
+
+# ---
+# ============================================================
+# TODO 3: Secret tipo kubernetes.io/tls "nginx-tls" com tls.crt e tls.key
+# (DICA: criar via 'kubectl create secret tls' eh mais facil que YAML)
+# ============================================================
+
+# ---
+# ============================================================
+# TODO 4: Secret Opaque "app-secrets" com SENHA_ADMIN
+# ============================================================
+
+# ---
+# ============================================================
+# TODO 5: Deployment 'nginx-https'
+# - replicas: 2
+# - imagem: nginx:1.27-alpine
+# - envFrom: app-vars (CM) e app-secrets (Secret)
+# - volume nginx-conf montado em /etc/nginx/nginx.conf (subPath)
+# - volume nginx-tls montado em /etc/nginx/tls (readonly)
+# - porta 443
+# ============================================================
+
+
+# ============================================================
+# ============================================================
+#                  SOLUCAO DE REFERENCIA
+#         (descomente o bloco inteiro pra aplicar)
+# ============================================================
+# ============================================================
+
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: nginx-conf
+# data:
+#   nginx.conf: |
+#     events {}
+#     http {
+#       server {
+#         listen 443 ssl;
+#         ssl_certificate     /etc/nginx/tls/tls.crt;
+#         ssl_certificate_key /etc/nginx/tls/tls.key;
+#
+#         location / {
+#           default_type text/html;
+#           return 200 '<h1>Desafio Modulo 07</h1><p>Nginx via ConfigMap + TLS via Secret</p>';
+#         }
+#         location /env {
+#           default_type text/plain;
+#           # Mostrar o ambiente lido do CM (so demo — nginx nao expoe env por padrao)
+#           return 200 'APP_ENV=$http_x_app_env\n';
+#         }
+#       }
+#     }
+# ---
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: app-vars
+# data:
+#   APP_ENV: "producao"
+# ---
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: app-secrets
+# type: Opaque
+# stringData:
+#   SENHA_ADMIN: "trocar-em-prod-via-vault"
+# ---
+# # O Secret TLS 'nginx-tls' criamos via kubectl create secret tls
+# # (ver desafio/comandos.sh) porque precisa de um cert real.
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: nginx-https
+# spec:
+#   replicas: 2
+#   selector:
+#     matchLabels:
+#       app: nginx-https
+#   template:
+#     metadata:
+#       labels:
+#         app: nginx-https
+#     spec:
+#       containers:
+#       - name: nginx
+#         image: nginx:1.27-alpine
+#         ports:
+#         - containerPort: 443
+#         envFrom:
+#         - configMapRef:
+#             name: app-vars       # injeta APP_ENV
+#         - secretRef:
+#             name: app-secrets    # injeta SENHA_ADMIN
+#         volumeMounts:
+#         - name: nginx-conf
+#           mountPath: /etc/nginx/nginx.conf
+#           subPath: nginx.conf    # subPath: substitui SO esse arquivo
+#           readOnly: true
+#         - name: nginx-tls
+#           mountPath: /etc/nginx/tls
+#           readOnly: true
+#       volumes:
+#       - name: nginx-conf
+#         configMap:
+#           name: nginx-conf
+#       - name: nginx-tls
+#         secret:
+#           secretName: nginx-tls

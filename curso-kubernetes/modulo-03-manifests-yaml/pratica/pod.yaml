@@ -1,0 +1,43 @@
+# Pod manual — escrito do zero, sem dry-run, sem kubectl run.
+# Esse é o "Hello World" dos manifests YAML.
+#
+# Aplicar:    kubectl apply -f pod.yaml
+# Listar:     kubectl get pods
+# Detalhes:   kubectl describe pod web-manual
+# Apagar:     kubectl delete -f pod.yaml
+
+apiVersion: v1          # core API, versão estável v1
+kind: Pod               # singular, PascalCase
+metadata:
+  name: web-manual      # nome único no namespace
+  labels:               # pra filtrar depois com -l
+    app: web
+    tier: frontend
+    env: estudo
+  annotations:          # metadado livre, só pra humano ler
+    descricao: "Pod nginx criado a partir de YAML manual"
+    autor: "estudo-k8s"
+spec:
+  # restartPolicy: Always é o default pra Pod, mas explicito é melhor que implícito.
+  # Outras opções: OnFailure, Never (úteis em Job/CronJob).
+  restartPolicy: Always
+  containers:
+    - name: nginx                      # nome do container DENTRO do pod
+      image: nginx:1.27-alpine         # use tag específica em prod, NUNCA :latest
+      imagePullPolicy: IfNotPresent    # só baixa se não tiver local — rápido em dev
+      ports:
+        - containerPort: 80            # porta que o container EXPÕE (documentativo)
+          name: http
+          protocol: TCP
+      resources:
+        # Garantia mínima de recursos — o scheduler usa isso pra escolher node.
+        requests:
+          cpu: "50m"          # 50 milicores = 0.05 de uma CPU
+          memory: "64Mi"      # 64 mebibytes
+        # Teto máximo — se passar de memória, container é morto (OOMKilled).
+        limits:
+          cpu: "200m"
+          memory: "128Mi"
+      env:
+        - name: AMBIENTE
+          value: "estudo"

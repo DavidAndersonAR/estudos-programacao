@@ -1,0 +1,105 @@
+# 🎯 DESAFIO MÓDULO 09 — Postgres como StatefulSet
+#
+# Você precisa montar 3 manifestos neste arquivo (separados por ---):
+#
+#   1) Secret  "pg-secret"     — guarda POSTGRES_PASSWORD (use stringData)
+#   2) Service "pg-svc"        — Headless (clusterIP: None), porta 5432
+#   3) StatefulSet "postgres"  — 1 réplica, imagem postgres:16-alpine
+#                                volumeClaimTemplates de 1Gi montado em
+#                                /var/lib/postgresql/data
+#                                env POSTGRES_PASSWORD vindo da Secret
+#                                serviceName: pg-svc
+#
+# 💡 Dicas:
+#   - Postgres precisa de PGDATA num subdir do mount, OU mount em /var/lib/postgresql/data
+#     com a env PGDATA=/var/lib/postgresql/data/pgdata pra evitar conflito com lost+found.
+#   - Use labels { app: postgres } pra amarrar tudo (selector do svc, selector do sts,
+#     labels do pod template).
+#   - StorageClass default do kind é "standard" — não precisa declarar storageClassName.
+#
+# Validação esperada (depois de aplicar):
+#   kubectl get sts,svc,pvc,secret
+#   - sts postgres 1/1 READY
+#   - svc pg-svc CLUSTER-IP <none>
+#   - pvc data-postgres-0 Bound
+#
+# ============================
+# SUA SOLUÇÃO ABAIXO
+# ============================
+
+# TODO 1: Secret pg-secret com POSTGRES_PASSWORD
+
+# TODO 2: Headless Service pg-svc
+
+# TODO 3: StatefulSet postgres com volumeClaimTemplates
+
+# ============================
+# SOLUÇÃO DE REFERÊNCIA — descomente pra usar
+# ============================
+
+# ---
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: pg-secret
+# type: Opaque
+# stringData:
+#   POSTGRES_PASSWORD: "senha-super-secreta-123"
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: pg-svc
+#   labels:
+#     app: postgres
+# spec:
+#   clusterIP: None
+#   selector:
+#     app: postgres
+#   ports:
+#     - name: pg
+#       port: 5432
+#       targetPort: 5432
+# ---
+# apiVersion: apps/v1
+# kind: StatefulSet
+# metadata:
+#   name: postgres
+# spec:
+#   serviceName: pg-svc
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       app: postgres
+#   template:
+#     metadata:
+#       labels:
+#         app: postgres
+#     spec:
+#       containers:
+#         - name: postgres
+#           image: postgres:16-alpine
+#           ports:
+#             - containerPort: 5432
+#               name: pg
+#           env:
+#             - name: POSTGRES_PASSWORD
+#               valueFrom:
+#                 secretKeyRef:
+#                   name: pg-secret
+#                   key: POSTGRES_PASSWORD
+#             - name: POSTGRES_DB
+#               value: estudo
+#             - name: PGDATA
+#               value: /var/lib/postgresql/data/pgdata
+#           volumeMounts:
+#             - name: data
+#               mountPath: /var/lib/postgresql/data
+#   volumeClaimTemplates:
+#     - metadata:
+#         name: data
+#       spec:
+#         accessModes: [ReadWriteOnce]
+#         resources:
+#           requests:
+#             storage: 1Gi

@@ -1,0 +1,27 @@
+# values.yaml — valores DEFAULT do chart "meuapp".
+# Tudo aqui pode ser sobrescrito com -f outro.yaml ou --set chave=valor.
+
+# Quantas replicas do Deployment.
+replicaCount: 2
+
+# Imagem do container.
+image:
+  repository: nginx
+  tag: alpine
+  pullPolicy: IfNotPresent
+
+# Service que expoe o Deployment.
+service:
+  type: ClusterIP   # mude pra NodePort/LoadBalancer se quiser expor pra fora
+  port: 80          # porta do Service
+  targetPort: 80    # porta do container
+
+# Recursos opcionais (vazio = sem limites).
+# Veja Modulo 15 pra entender requests/limits.
+resources: {}
+  # requests:
+  #   cpu: 100m
+  #   memory: 64Mi
+  # limits:
+  #   cpu: 250m
+  #   memory: 128Mi

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  labels:
+    app: app-configuravel
+data:
+  # Chaves simples — viram env vars OU arquivos
+  LOG_LEVEL: "debug"
+  FEATURE_FLAG: "true"
+  GREETING: "Ola do ConfigMap"
+
+  # Arquivo inteiro — bom pra configs de software (nginx, postgres, etc.)
+  app.properties: |
+    server.port=8080
+    cache.ttl=300
+    feature.beta=enabled
+    # Quando montado como volume, esse conteudo
+    # vira /etc/app/app.properties dentro do container

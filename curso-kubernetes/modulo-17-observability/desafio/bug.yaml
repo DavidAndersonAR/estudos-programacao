@@ -1,0 +1,75 @@
+# 🎯 DESAFIO Módulo 17 — Diagnosticar o pod misterioso
+#
+# Este manifest cria um Deployment de uma "API de pagamentos" que NÃO está
+# funcionando. As réplicas ficam reiniciando e nunca chegam em Ready.
+#
+# Seu trabalho: usar as ferramentas de observability pra descobrir
+# EXATAMENTE qual é o problema e descrever a causa raiz.
+#
+# (Sem espiar embaixo — tem MAIS de uma coisa errada de propósito.)
+#
+# Aplicar:
+#   kubectl apply -f bug.yaml
+#
+# Limpar no fim:
+#   kubectl delete -f bug.yaml
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-pagamentos-config
+data:
+  APP_NAME: "api-pagamentos"
+  LOG_LEVEL: "info"
+  # Nota: PORT, DB_HOST etc NÃO estão aqui de propósito
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-pagamentos
+  labels:
+    app: api-pagamentos
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api-pagamentos
+  template:
+    metadata:
+      labels:
+        app: api-pagamentos
+    spec:
+      containers:
+      - name: api
+        image: busybox:1.36
+        envFrom:
+        - configMapRef:
+            name: api-pagamentos-config
+        # Envs que o "app" precisa — mas faltam algumas chaves...
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: api-pagamentos-secret   # ← secret existe?
+              key: database-url
+        command: ["sh", "-c"]
+        args:
+          - |
+            echo "[$APP_NAME] iniciando em log_level=$LOG_LEVEL"
+            if [ -z "$DATABASE_URL" ]; then
+              echo "[ERRO] DATABASE_URL vazia — abortando" >&2
+              exit 2
+            fi
+            if [ -z "$PORT" ]; then
+              echo "[ERRO] PORT nao definida — abortando" >&2
+              exit 3
+            fi
+            echo "[OK] tudo certo, escutando em :$PORT"
+            sleep 3600
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "32Mi"
+          limits:
+            cpu: "100m"
+            memory: "64Mi"

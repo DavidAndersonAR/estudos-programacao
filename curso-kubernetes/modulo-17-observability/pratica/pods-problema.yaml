@@ -1,0 +1,70 @@
+# Módulo 17 — Prática: 3 pods quebrados de propósito
+#
+# Cada pod tem UM problema diferente. Aplique tudo e use as ferramentas
+# de observabilidade (logs, describe, events, top) pra diagnosticar.
+#
+# Aplicar:
+#   kubectl apply -f pods-problema.yaml
+#
+# Limpar:
+#   kubectl delete -f pods-problema.yaml
+---
+# Pod 1: ImagePullBackOff
+# Imagem não existe — registry vai recusar.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-imagem-ruim
+  labels:
+    app: pod-problema
+    bug: image
+spec:
+  containers:
+  - name: app
+    image: nginx:essa-tag-nao-existe-9.99
+    ports:
+    - containerPort: 80
+---
+# Pod 2: OOMKilled (sem memória)
+# Limit de 20Mi e um stress que aloca 100Mi — kernel mata.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-sem-memoria
+  labels:
+    app: pod-problema
+    bug: oom
+spec:
+  containers:
+  - name: app
+    image: polinux/stress
+    command: ["stress"]
+    args: ["--vm", "1", "--vm-bytes", "100M", "--vm-hang", "1"]
+    resources:
+      requests:
+        memory: "10Mi"
+      limits:
+        memory: "20Mi"
+---
+# Pod 3: CrashLoopBackOff
+# Comando que escreve erro em stderr e sai com código != 0.
+# K8s reinicia, ele crasha de novo, vira loop.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-crashando
+  labels:
+    app: pod-problema
+    bug: crash
+spec:
+  restartPolicy: Always
+  containers:
+  - name: app
+    image: busybox:1.36
+    command: ["sh", "-c"]
+    args:
+      - |
+        echo "App iniciando..."
+        sleep 2
+        echo "ERRO FATAL: variavel DATABASE_URL nao configurada" >&2
+        exit 1

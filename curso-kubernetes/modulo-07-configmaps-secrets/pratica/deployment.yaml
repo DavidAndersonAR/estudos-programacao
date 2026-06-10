@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-configuravel
+  labels:
+    app: app-configuravel
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: app-configuravel
+  template:
+    metadata:
+      labels:
+        app: app-configuravel
+    spec:
+      containers:
+      - name: app
+        # Usamos busybox so pra demonstrar — ele vai ficar dormindo
+        # enquanto inspecionamos env vars e arquivos montados.
+        image: busybox:1.36
+        command: ["sh", "-c", "env | sort > /tmp/env.txt; sleep 3600"]
+
+        # ---------- Forma 1: env vars individuais (valueFrom) ----------
+        # Bom quando quer renomear ou pegar so 1 chave.
+        env:
+        - name: LOG_LEVEL                # mesmo nome do CM
+          valueFrom:
+            configMapKeyRef:
+              name: app-config
+              key: LOG_LEVEL
+        - name: DB_PASSWORD              # vem do Secret
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: DB_PASSWORD
+
+        # ---------- Forma 2: env vars em lote (envFrom) ----------
+        # TODAS as chaves do CM/Secret viram env vars com o mesmo nome.
+        envFrom:
+        - configMapRef:
+            name: app-config             # pega FEATURE_FLAG, GREETING etc.
+        - secretRef:
+            name: db-secret              # pega DB_USER tambem
+
+        # ---------- Forma 3: volume mount ----------
+        # Cada chave do ConfigMap vira um ARQUIVO em /etc/app/
+        # Util pra apps que leem arquivo de config (nginx, prometheus...)
+        volumeMounts:
+        - name: config-vol
+          mountPath: /etc/app
+          readOnly: true
+
+      volumes:
+      - name: config-vol
+        configMap:
+          name: app-config
+          # Opcional: filtrar/renomear chaves
+          # items:
+          # - key: app.properties
+          #   path: meu-app.conf

@@ -1,0 +1,7 @@
+# ServiceAccount "ler-pods" no namespace rbac-lab
+# É só uma identidade — sem permissão nenhuma até a RoleBinding ligar a uma Role.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ler-pods
+  namespace: rbac-lab

@@ -1,0 +1,111 @@
+# 🎯 DESAFIO — Manifestos base
+#
+# Aqui você tem os Namespaces e os Deployments/Services já prontos.
+# Sua missão (em desafio/comandos.sh) é APLICAR este arquivo e criar
+# as ResourceQuotas com limites DIFERENTES por time:
+#   - time-a: time "pequeno"  → 3 pods, 1 CPU,  2Gi mem
+#   - time-b: time "grande"   → 8 pods, 4 CPU,  8Gi mem
+#
+# E depois fazer pods de um ns falarem com services do outro.
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: time-a
+  labels:
+    time: a
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: time-b
+  labels:
+    time: b
+---
+# App do time-a: api simples (nginx servindo "hello from time-a")
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: time-a
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+      - name: api
+        image: hashicorp/http-echo
+        args:
+        - "-text=hello from time-a"
+        - "-listen=:8080"
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: time-a
+spec:
+  selector:
+    app: api
+  ports:
+  - port: 8080
+    targetPort: 8080
+---
+# App do time-b: outra api
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: time-b
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+      - name: api
+        image: hashicorp/http-echo
+        args:
+        - "-text=hello from time-b"
+        - "-listen=:8080"
+        ports:
+        - containerPort: 8080
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 100m
+            memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: time-b
+spec:
+  selector:
+    app: api
+  ports:
+  - port: 8080
+    targetPort: 8080

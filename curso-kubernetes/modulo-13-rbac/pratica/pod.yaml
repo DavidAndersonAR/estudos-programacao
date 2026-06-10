@@ -1,0 +1,19 @@
+# Pod "cliente-api" usa a SA "ler-pods" pra falar com o API Server.
+# Imagem alpine + curl: usamos curl pra bater no API Server interno.
+# Dentro do pod, o token da SA está em /var/run/secrets/kubernetes.io/serviceaccount/
+apiVersion: v1
+kind: Pod
+metadata:
+  name: cliente-api
+  namespace: rbac-lab
+spec:
+  serviceAccountName: ler-pods         # <-- usa a SA criada
+  containers:
+  - name: shell
+    image: alpine:3.19
+    command: ["sh", "-c"]
+    args:
+    - |
+      apk add --no-cache curl >/dev/null
+      echo "Pod pronto. Use kubectl exec pra testar."
+      sleep 3600

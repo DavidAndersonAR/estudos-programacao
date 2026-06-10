@@ -1,0 +1,35 @@
+# Deployment com 2 réplicas de uma app web.
+# Os Services do lado vão selecionar pods por label app=web-demo.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-demo
+  labels:
+    app: web-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web-demo
+  template:
+    metadata:
+      labels:
+        app: web-demo   # <-- é POR ESSE label que os Services acham os pods
+    spec:
+      containers:
+        - name: web
+          # hashicorp/http-echo: servidor minúsculo que ecoa um texto.
+          # Útil pra ver de QUAL pod a resposta veio (-text inclui o hostname via shell? não — então
+          # vamos usar um truque: passar o nome do pod via env e mostrar.)
+          # Pra simplificar, usamos nginx com um initContainer que escreve o hostname no index.html.
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+          # Sobrescreve o index.html com o nome do pod pra dar pra ver o load balancing.
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - 'echo "Olá do pod $HOSTNAME" > /usr/share/nginx/html/index.html'

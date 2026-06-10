@@ -1,0 +1,133 @@
+# 🎯 DESAFIO MÓDULO 10 — CronJob de Backup
+#
+# Cenário: simule um backup diário do "banco de dados". O backup é só
+# um arquivo com data + dump fake, escrito num volume compartilhado.
+#
+# OBJETIVOS:
+# 1. Schedule: rodar a cada 2 minutos (pra testar rápido — em prod seria "0 2 * * *")
+# 2. Cada execução escreve um arquivo backup-<timestamp>.sql em /backups
+# 3. Listar os backups existentes no log antes de criar o novo
+# 4. concurrencyPolicy: Forbid (não quer 2 backups brigando pelo volume)
+# 5. successfulJobsHistoryLimit: 2 (só guarda histórico dos 2 últimos sucessos)
+# 6. failedJobsHistoryLimit: 1
+# 7. Volume: emptyDir é suficiente (some quando o pod some, mas serve pra demo)
+# 8. ttlSecondsAfterFinished pra Jobs não acumularem
+#
+# 💡 DICAS:
+# - Em prod o volume seria PersistentVolumeClaim, não emptyDir
+# - Use `command: ["sh","-c", "..."]` pra rodar várias linhas de shell
+# - Pra timestamp num nome de arquivo: $(date +%Y%m%d-%H%M%S)
+# - Não esqueça restartPolicy (OnFailure ou Never — Always não funciona)
+
+# ============================
+# 👇 SUA SOLUÇÃO AQUI EMBAIXO
+# ============================
+
+# apiVersion: batch/v1
+# kind: CronJob
+# metadata:
+#   name: backup
+# spec:
+#   schedule: "TODO"
+#   concurrencyPolicy: TODO
+#   successfulJobsHistoryLimit: TODO
+#   failedJobsHistoryLimit: TODO
+#   jobTemplate:
+#     spec:
+#       ttlSecondsAfterFinished: TODO
+#       template:
+#         spec:
+#           restartPolicy: TODO
+#           volumes:
+#             - name: TODO
+#               emptyDir: {}
+#           containers:
+#             - name: backup
+#               image: busybox:1.36
+#               command:
+#                 - sh
+#                 - -c
+#                 - |
+#                   # TODO: listar backups existentes em /backups
+#                   # TODO: gerar arquivo backup-<timestamp>.sql com conteúdo fake
+#                   # TODO: imprimir "Backup criado: <nome>"
+#               volumeMounts:
+#                 - name: TODO
+#                   mountPath: /backups
+
+# ============================
+# 🔓 SOLUÇÃO DE REFERÊNCIA
+# Pra ver: troque "false" por "true" abaixo e aplique este arquivo.
+# (No K8s, não tem "ifdef" — deixei a solução como segundo doc YAML pra
+#  você aplicar quando quiser. Comente o seu acima antes de aplicar este,
+#  ou renomeie o metadata.name pra evitar conflito.)
+# ============================
+
+---
+# 👇 SOLUÇÃO — descomente o bloco inteiro removendo o '# ' do começo de cada linha
+# apiVersion: batch/v1
+# kind: CronJob
+# metadata:
+#   name: backup
+# spec:
+#   schedule: "*/2 * * * *"        # a cada 2min (em prod: "0 2 * * *" pra 2h da manhã)
+#   concurrencyPolicy: Forbid       # nunca 2 backups ao mesmo tempo
+#   successfulJobsHistoryLimit: 2
+#   failedJobsHistoryLimit: 1
+#   startingDeadlineSeconds: 120
+#   jobTemplate:
+#     spec:
+#       backoffLimit: 1
+#       ttlSecondsAfterFinished: 300   # Jobs somem 5min depois de terminar
+#       template:
+#         spec:
+#           restartPolicy: OnFailure
+#           volumes:
+#             - name: backup-storage
+#               emptyDir: {}
+#           containers:
+#             - name: backup
+#               image: busybox:1.36
+#               command:
+#                 - sh
+#                 - -c
+#                 - |
+#                   set -e
+#                   echo "=== Backup iniciado em $(date) ==="
+#                   echo ""
+#                   echo "Backups existentes em /backups:"
+#                   ls -lh /backups/ 2>/dev/null || echo "  (nenhum ainda)"
+#                   echo ""
+#                   TS=$(date +%Y%m%d-%H%M%S)
+#                   FILE="/backups/backup-${TS}.sql"
+#                   {
+#                     echo "-- Backup simulado gerado em $(date)"
+#                     echo "-- Host: $(hostname)"
+#                     echo "CREATE TABLE users (id INT, name VARCHAR(100));"
+#                     echo "INSERT INTO users VALUES (1, 'fulano');"
+#                     echo "INSERT INTO users VALUES (2, 'beltrano');"
+#                   } > "$FILE"
+#                   echo "Backup criado: $FILE ($(wc -c < "$FILE") bytes)"
+#                   echo ""
+#                   echo "Total de backups agora: $(ls /backups/ | wc -l)"
+#                   echo "=== Backup concluído ==="
+#               volumeMounts:
+#                 - name: backup-storage
+#                   mountPath: /backups
+#               resources:
+#                 requests:
+#                   cpu: "10m"
+#                   memory: "16Mi"
+#                 limits:
+#                   cpu: "100m"
+#                   memory: "64Mi"
+#
+# ⚠️ NOTA SOBRE emptyDir:
+# Cada Job cria um Pod novo, com volume emptyDir NOVO. Então na prática,
+# rodar "ls /backups" sempre vai mostrar vazio entre execuções. Pra
+# persistência real (e backups acumulando entre execuções), use:
+#   volumes:
+#     - name: backup-storage
+#       persistentVolumeClaim:
+#         claimName: backup-pvc
+# (PVC é tópico do módulo de Volumes — fica como bônus mental.)

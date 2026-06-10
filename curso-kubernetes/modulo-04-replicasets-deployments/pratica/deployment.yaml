@@ -1,0 +1,39 @@
+# Módulo 04 — Prática: Deployment do nginx com 3 réplicas
+#
+# Estratégia RollingUpdate: zero downtime ao trocar imagem.
+# maxSurge=1 + maxUnavailable=1 → durante o rollout pode ter de 2 a 4 Pods.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deploy
+  labels:
+    app: nginx
+    modulo: "04"
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx        # tem que bater com selector.matchLabels
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.25
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "32Mi"
+            limits:
+              cpu: "100m"
+              memory: "128Mi"

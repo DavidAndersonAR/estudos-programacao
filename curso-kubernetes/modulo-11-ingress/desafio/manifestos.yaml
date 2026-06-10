@@ -1,0 +1,153 @@
+# 🎯 DESAFIO DO MÓDULO 11 — Roteamento por PATH
+#
+# Cenário: você tem UM domínio só (app.local.test) e precisa servir 3 apps
+# diferentes baseado no caminho da URL:
+#
+#   GET app.local.test/api/...     → Service "api"
+#   GET app.local.test/static/...  → Service "static"
+#   GET app.local.test/...         → Service "default" (catch-all)
+#
+# Objetivo:
+#   1. Crie 3 Deployments + 3 Services (api, static, default).
+#      Use http-echo com texto diferente em cada um.
+#   2. Crie UM Ingress só, com host "app.local.test" e 3 paths.
+#   3. Path types: use Prefix em todos.
+#   4. Ordem importa? Investigue: tente colocar /api depois de /, e veja se quebra.
+#      (Spoiler: o nginx-ingress ordena por especificidade, então não quebra.
+#       Mas em outros controllers pode dar zica. Cuidado.)
+#
+# ⚠️ Adicione no /etc/hosts antes:
+#     127.0.0.1  app.local.test
+#
+# Aplique tudo num arquivo só (este aqui) com `kubectl apply -f manifestos.yaml`.
+# Depois rode os curls do desafio/comandos.sh.
+
+# ============================
+# SUA SOLUÇÃO ABAIXO
+# ============================
+
+# TODO 1: Deployment + Service "api"
+#   - 1 réplica
+#   - http-echo com texto "Sou a API 🔌"
+#   - Service na porta 80 → targetPort 5678
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# ...
+
+# TODO 2: Deployment + Service "static"
+#   - 1 réplica
+#   - http-echo com texto "Conteúdo estático 📁"
+
+# TODO 3: Deployment + Service "default"
+#   - 1 réplica
+#   - http-echo com texto "Página padrão 🏠"
+
+# TODO 4: Ingress
+#   - host: app.local.test
+#   - paths:
+#       /api      → service "api"
+#       /static   → service "static"
+#       /         → service "default"
+
+# ============================
+# SOLUÇÃO DE REFERÊNCIA (descomente o bloco abaixo pra rodar)
+# ============================
+# Pra "descomentar em massa": no VSCode, selecione o bloco e Ctrl+/
+# Ou use sed. Ou apenas leia.
+
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata: { name: api }
+# spec:
+#   replicas: 1
+#   selector: { matchLabels: { app: api } }
+#   template:
+#     metadata: { labels: { app: api } }
+#     spec:
+#       containers:
+#       - name: echo
+#         image: hashicorp/http-echo:1.0
+#         args: ["-text=Sou a API 🔌", "-listen=:5678"]
+#         ports: [{ containerPort: 5678 }]
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata: { name: api }
+# spec:
+#   selector: { app: api }
+#   ports: [{ port: 80, targetPort: 5678 }]
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata: { name: static }
+# spec:
+#   replicas: 1
+#   selector: { matchLabels: { app: static } }
+#   template:
+#     metadata: { labels: { app: static } }
+#     spec:
+#       containers:
+#       - name: echo
+#         image: hashicorp/http-echo:1.0
+#         args: ["-text=Conteúdo estático 📁", "-listen=:5678"]
+#         ports: [{ containerPort: 5678 }]
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata: { name: static }
+# spec:
+#   selector: { app: static }
+#   ports: [{ port: 80, targetPort: 5678 }]
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata: { name: default }
+# spec:
+#   replicas: 1
+#   selector: { matchLabels: { app: default } }
+#   template:
+#     metadata: { labels: { app: default } }
+#     spec:
+#       containers:
+#       - name: echo
+#         image: hashicorp/http-echo:1.0
+#         args: ["-text=Página padrão 🏠", "-listen=:5678"]
+#         ports: [{ containerPort: 5678 }]
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata: { name: default }
+# spec:
+#   selector: { app: default }
+#   ports: [{ port: 80, targetPort: 5678 }]
+# ---
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: roteamento-por-path
+# spec:
+#   ingressClassName: nginx
+#   rules:
+#   - host: app.local.test
+#     http:
+#       paths:
+#       - path: /api
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: api
+#             port: { number: 80 }
+#       - path: /static
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: static
+#             port: { number: 80 }
+#       - path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: default
+#             port: { number: 80 }

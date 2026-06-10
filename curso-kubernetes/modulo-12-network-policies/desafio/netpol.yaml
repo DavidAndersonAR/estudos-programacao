@@ -1,0 +1,179 @@
+# 🎯 DESAFIO DO MÓDULO 12 — Stack 3-tier blindada
+#
+# Cenário: namespace "shop" com 3 tiers:
+#   web (label tier=web)    → frontend público
+#   api (label tier=api)    → backend
+#   db  (label tier=db)     → banco
+#
+# Regras que VOCÊ deve implementar com NetworkPolicies:
+#   1. web → SÓ pode receber tráfego de fora (vamos simular com o ns "kube-system",
+#            que é onde fica o ingress controller na vida real).
+#            web NÃO recebe de api nem de db.
+#   2. web → SÓ pode chamar api (egress).
+#   3. api → SÓ aceita ingress de web.
+#   4. api → SÓ pode chamar db (egress) + DNS.
+#   5. db  → SÓ aceita ingress de api. Não chama ninguém de fora (egress fechado, exceto DNS).
+#
+# Como testar:
+#   - web  → api  ✅
+#   - web  → db   ❌ (timeout)
+#   - api  → db   ✅
+#   - api  → web  ❌
+#   - db   → api  ❌
+#   - db   → google.com ❌
+#
+# 💡 Dicas:
+#   - Use default-deny pra Ingress E Egress no namespace.
+#   - Lembra do DNS no egress (UDP/53 no kube-system) senão nada resolve nome.
+#   - Cada tier vai precisar de policies separadas pra ingress E egress.
+#   - "Egress de X só pode ir pra Y" = policy com podSelector=X, policyTypes=[Egress],
+#     egress.to.podSelector=Y.
+#
+# Os apps já foram criados pra você assumir que existem com labels:
+#   tier=web, tier=api, tier=db (todos no ns "shop")
+#
+# ============================
+# SUA SOLUÇÃO ABAIXO
+# ============================
+#
+# TODO 1: default-deny (ingress + egress) pra todo o ns shop
+# TODO 2: permitir DNS pra todos (UDP 53 pro kube-system)
+# TODO 3: web — ingress vindo só do kube-system (ingress controller)
+# TODO 4: web — egress só pra api
+# TODO 5: api — ingress só de web
+# TODO 6: api — egress só pra db
+# TODO 7: db  — ingress só de api
+# (db não precisa de policy de egress extra — o default-deny + DNS já basta)
+
+# ============================
+# SOLUÇÃO DE REFERÊNCIA
+# Descomente um bloco YAML por vez se quiser ver passo a passo.
+# Pra aplicar tudo de uma vez: kubectl apply -f desafio/netpol.yaml
+# ============================
+
+# --- 1. Default-deny total no namespace shop ---
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: shop
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+  # sem regras → tudo bloqueado
+
+# --- 2. DNS liberado pra todo pod (UDP 53 → kube-system) ---
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: shop
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+# --- 3. web: ingress só de fora do ns (kube-system / ingress controller) ---
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: web-ingress
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels: {tier: web}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: TCP
+          port: 80
+
+# --- 4. web: egress só pra api:80 ---
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: web-egress-api
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels: {tier: web}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels: {tier: api}
+      ports:
+        - protocol: TCP
+          port: 80
+
+# --- 5. api: ingress só de web:80 ---
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-ingress-web
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels: {tier: api}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: {tier: web}
+      ports:
+        - protocol: TCP
+          port: 80
+
+# --- 6. api: egress só pra db:5432 ---
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-egress-db
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels: {tier: api}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector:
+            matchLabels: {tier: db}
+      ports:
+        - protocol: TCP
+          port: 5432
+
+# --- 7. db: ingress só de api:5432 ---
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: db-ingress-api
+  namespace: shop
+spec:
+  podSelector:
+    matchLabels: {tier: db}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: {tier: api}
+      ports:
+        - protocol: TCP
+          port: 5432

@@ -1,0 +1,165 @@
+# 🎯 DESAFIO MÓDULO 08 — Postgres com PVC
+#
+# Objetivo:
+# Rodar um Postgres num Deployment com PVC. Criar uma tabela e inserir linhas.
+# Matar o pod (ou escalar pra 0 e voltar). Provar que os dados continuam lá.
+#
+# Você vai preencher os 3 manifestos abaixo (Secret, PVC, Deployment).
+# Use o comandos.sh do desafio pra rodar os passos de validação.
+#
+# 💡 Dicas:
+#   - Postgres precisa de POSTGRES_PASSWORD (use Secret, nada de plaintext)
+#   - dados ficam em /var/lib/postgresql/data
+#   - access mode = ReadWriteOnce (1 réplica só — mais que isso quebra)
+#   - strategy: Recreate no Deployment (não pode ter 2 pods montando o mesmo
+#     PVC RWO ao mesmo tempo durante rollout)
+#   - subPath: "pgdata" é boa ideia (Postgres reclama se a pasta raiz do
+#     volume não estiver vazia em alguns provisioners)
+
+# ============================
+# SUA SOLUÇÃO ABAIXO
+# ============================
+
+# TODO 1: Secret com a senha do postgres
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: postgres-secret
+# type: Opaque
+# stringData:
+#   POSTGRES_PASSWORD: ???
+
+---
+# TODO 2: PVC de 1Gi, RWO, default StorageClass
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: ???
+# spec:
+#   accessModes:
+#     - ???
+#   resources:
+#     requests:
+#       storage: ???
+
+---
+# TODO 3: Deployment do Postgres
+# - 1 réplica
+# - strategy: Recreate
+# - envFrom secretRef
+# - volumeMount em /var/lib/postgresql/data (com subPath pgdata)
+# - volume vindo do PVC
+#
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: postgres
+# spec:
+#   replicas: 1
+#   strategy:
+#     type: ???
+#   selector: { matchLabels: { app: postgres } }
+#   template:
+#     metadata: { labels: { app: postgres } }
+#     spec:
+#       containers:
+#         - name: postgres
+#           image: postgres:16-alpine
+#           envFrom:
+#             - secretRef: { name: ??? }
+#           ports:
+#             - containerPort: 5432
+#           volumeMounts:
+#             - name: ???
+#               mountPath: /var/lib/postgresql/data
+#               subPath: pgdata
+#       volumes:
+#         - name: ???
+#           persistentVolumeClaim:
+#             claimName: ???
+
+
+# ============================
+# SOLUÇÃO DE REFERÊNCIA
+# (apague a linha abaixo e o "..." final pra ativar)
+# ============================
+#
+# REMOVA A LINHA `kind: ConfigMap` ABAIXO PRA "DESLIGAR" O PLACEHOLDER E
+# DEIXAR SÓ A SOLUÇÃO ABAIXO ATIVA:
+---
+# Solução —-----------------------------------------------
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+type: Opaque
+stringData:
+  POSTGRES_PASSWORD: "estudo-k8s-2026"
+  POSTGRES_DB: "loja"
+  POSTGRES_USER: "admin"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  # Recreate: mata o pod antigo antes de subir o novo.
+  # Necessário pra PVC RWO — 2 pods não podem montar ao mesmo tempo.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          envFrom:
+            - secretRef:
+                name: postgres-secret
+          ports:
+            - containerPort: 5432
+              name: pg
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+              subPath: pgdata        # Postgres exige pasta limpa; subPath ajuda
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "admin", "-d", "loja"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: pgdata
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+---
+# Service ClusterIP — opcional, pra conectar via DNS dentro do cluster.
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: pg

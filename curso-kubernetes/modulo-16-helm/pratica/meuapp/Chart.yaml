@@ -1,0 +1,15 @@
+# Metadados do chart "meuapp" — versão didática mínima.
+#
+# apiVersion v2 = Helm 3 (use sempre v2 em chart novo).
+# type:
+#   - application: vira release no cluster (caso comum).
+#   - library: só fornece templates pra outros charts (não instala).
+apiVersion: v2
+name: meuapp
+description: Chart didatico de exemplo (Modulo 16) — Deployment + Service do nginx
+type: application
+
+# version  = versao DO CHART (aumente a cada mudanca, segue SemVer).
+# appVersion = versao DA APLICACAO empacotada (aqui, do nginx).
+version: 0.1.0
+appVersion: "1.27.0"

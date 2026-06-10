@@ -1,0 +1,32 @@
+# StatefulSet de nginx com 3 réplicas
+#
+# Resultado esperado:
+# - Pods criados em ordem: nginx-0, depois nginx-1, depois nginx-2
+# - Cada pod tem DNS próprio: nginx-0.app-svc, nginx-1.app-svc, nginx-2.app-svc
+# - Se você deletar nginx-1, o substituto também se chama nginx-1
+#
+# Pré-requisito: aplicar headless-svc.yaml ANTES (ou junto).
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nginx
+spec:
+  serviceName: app-svc     # 👈 PRECISA bater com o nome do Headless Service
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web           # bate com o selector do app-svc
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+              name: http
+          # Sem volumeMounts neste exercício — só queremos ver nome/DNS estável.
+          # No desafio do Postgres você verá volumeClaimTemplates de verdade.

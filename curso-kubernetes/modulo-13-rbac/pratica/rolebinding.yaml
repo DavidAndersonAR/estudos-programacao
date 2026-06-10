@@ -1,0 +1,16 @@
+# RoleBinding "liga-ler-pods" — conecta a SA "ler-pods" à Role "leitor-pods".
+# Subjects = quem ganha. roleRef = qual papel é dado.
+# Ambos no mesmo namespace (rbac-lab) — RoleBinding é namespaced.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: liga-ler-pods
+  namespace: rbac-lab
+subjects:
+- kind: ServiceAccount
+  name: ler-pods
+  namespace: rbac-lab
+roleRef:
+  kind: Role
+  name: leitor-pods
+  apiGroup: rbac.authorization.k8s.io

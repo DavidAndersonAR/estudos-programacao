@@ -1,0 +1,38 @@
+# ResourceQuota em dev:
+#   - no máximo 5 pods
+#   - soma dos requests de CPU ≤ 2 (2 CPUs inteiras)
+#   - soma dos requests de memória ≤ 4Gi
+#   - soma dos limits de CPU ≤ 4
+#   - soma dos limits de memória ≤ 8Gi
+#
+# Junto vai um LimitRange com defaults — assim pods sem requests/limits
+# também passam (recebem os defaults). Sem isso, qualquer pod sem
+# resources declarados é REJEITADO quando há quota de requests/limits.
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: quota-dev
+  namespace: dev
+spec:
+  hard:
+    pods: "5"
+    requests.cpu: "2"
+    requests.memory: 4Gi
+    limits.cpu: "4"
+    limits.memory: 8Gi
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: defaults-dev
+  namespace: dev
+spec:
+  limits:
+  - type: Container
+    default:
+      cpu: 200m
+      memory: 256Mi
+    defaultRequest:
+      cpu: 100m
+      memory: 128Mi

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: webapp
+description: Desafio M16 — chart com Deployment + Service + ConfigMap + Ingress condicional
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

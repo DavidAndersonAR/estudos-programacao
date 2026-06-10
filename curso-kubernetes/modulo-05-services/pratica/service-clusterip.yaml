@@ -1,0 +1,15 @@
+# Service tipo ClusterIP — só acessível DE DENTRO do cluster.
+# Outros pods chegam por: http://web-demo-svc  (DNS interno)
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-demo-svc
+spec:
+  type: ClusterIP        # default — poderia omitir
+  selector:
+    app: web-demo        # casa com os pods do Deployment
+  ports:
+    - name: http
+      port: 80           # porta DO Service (a que outros pods batem)
+      targetPort: 80     # porta DO Pod (onde o nginx escuta)
+      protocol: TCP

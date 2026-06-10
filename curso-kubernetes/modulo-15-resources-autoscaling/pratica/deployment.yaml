@@ -1,0 +1,52 @@
+# Módulo 15 — Deployment do exemplo clássico de HPA: php-apache
+#
+# Imagem do próprio time do K8s, feita pra demonstrar autoscaling.
+# Cada request faz o PHP calcular algo pesado (consome CPU).
+#
+# O HPA precisa de `requests` de CPU pra ter base de cálculo de %.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: php-apache
+  labels:
+    app: php-apache
+spec:
+  replicas: 1                    # vai começar com 1, HPA assume daqui
+  selector:
+    matchLabels:
+      app: php-apache
+  template:
+    metadata:
+      labels:
+        app: php-apache
+    spec:
+      containers:
+      - name: php-apache
+        image: registry.k8s.io/hpa-example
+        ports:
+        - containerPort: 80
+        resources:
+          # Requests baixos pra que pouca carga já passe de 50%.
+          # 200m = 0.2 CPU. Com 100% disso a gente bate 50% facilmente.
+          requests:
+            cpu: "200m"
+            memory: "64Mi"
+          # Limits mais altos pra dar espaço de "burst" antes de throttle.
+          # QoS class: Burstable (requests != limits).
+          limits:
+            cpu: "500m"
+            memory: "128Mi"
+---
+# Service ClusterIP pra outros pods do cluster baterem no app.
+# (HPA não precisa dele, mas o gerador de carga vai.)
+apiVersion: v1
+kind: Service
+metadata:
+  name: php-apache
+spec:
+  selector:
+    app: php-apache
+  ports:
+  - port: 80
+    targetPort: 80

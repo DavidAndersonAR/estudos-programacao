@@ -1,0 +1,143 @@
+# 🎯 DESAFIO DO MÓDULO 15 — App dimensionado + HPA com behavior customizado
+#
+# Contexto:
+# Você tá subindo um app web (use a mesma imagem registry.k8s.io/hpa-example).
+# O time de SRE reclamou que o HPA padrão escala AGRESSIVO demais — em pico
+# rápido, ele dobra réplicas em segundos e custa caro na cloud.
+#
+# Seu trabalho:
+# 1. Criar Deployment "api" com resources bem definidos:
+#      - QoS class: Burstable
+#      - request cpu: 150m, request memory: 64Mi
+#      - limit cpu: 400m, limit memory: 128Mi
+#      - 2 réplicas iniciais
+# 2. Criar Service ClusterIP "api" na porta 80
+# 3. Criar HPA "api" com:
+#      - min 2, max 8 réplicas
+#      - alvo: 60% de CPU
+#      - behavior customizado:
+#         * subir no máximo 50% de réplicas a cada 60s
+#         * descer no máximo 1 pod a cada 120s
+#         * estabilização ao descer: 300s (5min) — evita yo-yo
+#
+# 💡 Dicas:
+#   - Doc do behavior: https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#configurable-scaling-behavior
+#   - behavior tem scaleUp e scaleDown, cada um com:
+#       - stabilizationWindowSeconds
+#       - policies: [{ type: Percent|Pods, value: N, periodSeconds: N }]
+#       - selectPolicy: Max|Min|Disabled
+#   - Pra QoS Burstable: requests != limits (já tá no enunciado, só conferir)
+#
+# Aplique e gere carga. O HPA deve escalar de forma MAIS CONTROLADA que o padrão.
+
+# ============================
+# SUA SOLUÇÃO ABAIXO
+# ============================
+
+# TODO 1: Deployment "api" com requests/limits corretos
+# apiVersion: apps/v1
+# kind: Deployment
+# ...
+
+---
+
+# TODO 2: Service ClusterIP "api"
+# apiVersion: v1
+# kind: Service
+# ...
+
+---
+
+# TODO 3: HPA "api" com behavior customizado
+# apiVersion: autoscaling/v2
+# kind: HorizontalPodAutoscaler
+# ...
+# spec:
+#   behavior:
+#     scaleUp:
+#       ...
+#     scaleDown:
+#       ...
+
+# ============================
+# SOLUÇÃO DE REFERÊNCIA — descomente pra rodar (apague o `#` de cada linha,
+# ou copie pra outro arquivo). Está toda comentada pra não conflitar com TODOs.
+# ============================
+
+# ---
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: api
+#   labels: { app: api }
+# spec:
+#   replicas: 2
+#   selector:
+#     matchLabels: { app: api }
+#   template:
+#     metadata:
+#       labels: { app: api }
+#     spec:
+#       containers:
+#       - name: api
+#         image: registry.k8s.io/hpa-example
+#         ports: [{ containerPort: 80 }]
+#         resources:
+#           # Burstable: requests < limits
+#           requests:
+#             cpu: "150m"
+#             memory: "64Mi"
+#           limits:
+#             cpu: "400m"
+#             memory: "128Mi"
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: api
+# spec:
+#   selector: { app: api }
+#   ports:
+#   - port: 80
+#     targetPort: 80
+# ---
+# apiVersion: autoscaling/v2
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: api
+# spec:
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: api
+#   minReplicas: 2
+#   maxReplicas: 8
+#   metrics:
+#   - type: Resource
+#     resource:
+#       name: cpu
+#       target:
+#         type: Utilization
+#         averageUtilization: 60
+#   # behavior = controle fino sobre como escala
+#   behavior:
+#     scaleUp:
+#       # Sem janela de estabilização ao subir — sobe rápido se passou do alvo.
+#       stabilizationWindowSeconds: 0
+#       policies:
+#       # Máximo +50% de réplicas a cada 60s.
+#       # Ex: tem 4 → no máximo cria 2 novos nesse intervalo (vai pra 6).
+#       - type: Percent
+#         value: 50
+#         periodSeconds: 60
+#       selectPolicy: Max
+#     scaleDown:
+#       # 5min de janela de estabilização — só desce se uso ficar baixo por 5min seguidos.
+#       # Evita "yo-yo" (subir-descer-subir em ciclos curtos).
+#       stabilizationWindowSeconds: 300
+#       policies:
+#       # No máximo -1 pod a cada 120s. Decresce devagar.
+#       - type: Pods
+#         value: 1
+#         periodSeconds: 120
+#       selectPolicy: Max

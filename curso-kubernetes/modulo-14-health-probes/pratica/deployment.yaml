@@ -1,0 +1,81 @@
+# Módulo 14 — Prática: app self-healing
+#
+# App: hashicorp/http-echo serve uma resposta fixa na porta 5678.
+# Como ela não tem /healthz e /readyz de verdade, usamos um truque:
+# - usamos `exec` probes com base em arquivos em /tmp
+# - você consegue "quebrar" a saúde removendo o arquivo (kubectl exec rm)
+# - o K8s detecta e reinicia o container automaticamente
+#
+# Por que assim? Porque é fácil de demonstrar SEM precisar buildar imagem custom.
+# Num projeto real, sua app exporia /healthz e /readyz via HTTP de verdade.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-saudavel
+  labels:
+    app: app-saudavel
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-saudavel
+  template:
+    metadata:
+      labels:
+        app: app-saudavel
+    spec:
+      containers:
+        - name: app
+          image: hashicorp/http-echo:1.0
+          args:
+            - "-text=oi do pod saudavel"
+            - "-listen=:5678"
+          ports:
+            - containerPort: 5678
+              name: http
+
+          # ----------- startupProbe -----------
+          # Cria o arquivo /tmp/healthy assim que o container sobe.
+          # Enquanto não existir, liveness/readiness ficam suspensas.
+          # 30 × 2s = 60s de tolerância pra inicializar.
+          startupProbe:
+            exec:
+              command: ["sh", "-c", "touch /tmp/healthy /tmp/ready && test -f /tmp/healthy"]
+            periodSeconds: 2
+            failureThreshold: 30
+
+          # ----------- livenessProbe -----------
+          # Checa só "o container está vivo?" — existência de /tmp/healthy.
+          # Se você apagar o arquivo: 3 falhas × 5s = ~15s pra K8s REINICIAR o pod.
+          livenessProbe:
+            exec:
+              command: ["test", "-f", "/tmp/healthy"]
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          # ----------- readinessProbe -----------
+          # Checa se está pronto pra receber tráfego — /tmp/ready.
+          # Apagar este arquivo: 2 falhas × 3s = ~6s pra K8s REMOVER do Service.
+          # Pod continua vivo, só fica fora do balanceador.
+          readinessProbe:
+            exec:
+              command: ["test", "-f", "/tmp/ready"]
+            periodSeconds: 3
+            timeoutSeconds: 2
+            failureThreshold: 2
+
+---
+# Service pra observar readiness em ação (endpoints somem/voltam)
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-saudavel
+spec:
+  selector:
+    app: app-saudavel
+  ports:
+    - port: 80
+      targetPort: 5678
+      name: http

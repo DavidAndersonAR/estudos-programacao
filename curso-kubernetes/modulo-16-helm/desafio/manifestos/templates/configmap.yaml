@@ -1,0 +1,12 @@
+# ConfigMap — chave/valor que vai virar env var no container.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "webapp.fullname" . }}-config
+  labels:
+    {{- include "webapp.labels" . | nindent 4 }}
+data:
+  # range itera sobre o map .Values.config — cada par vira uma chave do ConfigMap.
+  {{- range $key, $value := .Values.config }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}

@@ -1,0 +1,19 @@
+Release {{ .Release.Name }} instalada no namespace {{ .Release.Namespace }}.
+
+Ambiente: {{ .Values.config.APP_ENV }}
+Replicas: {{ .Values.replicaCount }}
+Imagem:   {{ .Values.image.repository }}:{{ .Values.image.tag }}
+
+{{- if .Values.ingress.enabled }}
+Acesse via Ingress:
+  http://{{ .Values.ingress.host }}{{ .Values.ingress.path }}
+{{- else }}
+Ingress desabilitado. Use port-forward pra testar:
+  kubectl port-forward svc/{{ include "webapp.fullname" . }} 8080:{{ .Values.service.port }}
+  Depois abra http://localhost:8080
+{{- end }}
+
+Comandos uteis:
+  helm status {{ .Release.Name }}
+  helm get values {{ .Release.Name }}
+  helm history {{ .Release.Name }}

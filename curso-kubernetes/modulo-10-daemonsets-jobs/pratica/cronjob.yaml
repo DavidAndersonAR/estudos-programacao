@@ -1,0 +1,33 @@
+# CronJob — roda um Job a cada 1 minuto que só dá "hello" e a data.
+# Útil pra ver o ciclo: CronJob -> Job -> Pod -> termina -> próxima rodada.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: hello
+spec:
+  schedule: "*/1 * * * *"           # a cada 1 minuto
+  concurrencyPolicy: Forbid         # se o anterior ainda roda, pula essa execução
+  successfulJobsHistoryLimit: 3     # mantém 3 Jobs bem-sucedidos no histórico
+  failedJobsHistoryLimit: 1         # mantém só 1 Job falhado
+  startingDeadlineSeconds: 60       # se atrasou >60s, desiste dessa execução
+  jobTemplate:
+    spec:
+      backoffLimit: 0               # se falhar, não tenta de novo nessa rodada
+      ttlSecondsAfterFinished: 120  # Job some 2min depois de terminar
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: hello
+              image: busybox:1.36
+              command:
+                - sh
+                - -c
+                - 'echo "[$(date)] hello do CronJob!"'
+              resources:
+                requests:
+                  cpu: "10m"
+                  memory: "16Mi"
+                limits:
+                  cpu: "50m"
+                  memory: "32Mi"

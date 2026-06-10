@@ -1,0 +1,26 @@
+# Override pra ambiente PROD.
+# Use: helm upgrade --install webapp ./manifestos -f manifestos/values-prod.yaml
+
+replicaCount: 4
+
+image:
+  tag: stable-alpine
+
+config:
+  APP_ENV: "prod"
+  LOG_LEVEL: "warn"
+  WELCOME_MSG: "Producao — cuidado ao mexer"
+
+ingress:
+  enabled: true
+  className: "nginx"
+  host: webapp.exemplo.com
+  path: /
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi

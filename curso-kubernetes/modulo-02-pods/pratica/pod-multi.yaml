@@ -1,0 +1,51 @@
+# Multi-container Pod — app (nginx) + sidecar (busybox como log shipper simulado).
+#
+# Padrão sidecar:
+#   - nginx escreve logs de acesso em /var/log/nginx/access.log
+#   - busybox lê esse arquivo via volume compartilhado e imprime no stdout
+#     (na vida real mandaria pro Elasticsearch/Loki)
+#
+# Os dois containers compartilham:
+#   - rede (busybox vê o nginx em localhost:80)
+#   - volume "logs" montado em /var/log/nginx nos dois
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app-com-sidecar
+  labels:
+    app: web
+    tipo: multi
+spec:
+  restartPolicy: Always
+
+  volumes:
+    - name: logs
+      emptyDir: {}
+
+  containers:
+    # --- Container principal ---
+    - name: nginx
+      image: nginx:alpine
+      ports:
+        - containerPort: 80
+          name: http
+      volumeMounts:
+        - name: logs
+          mountPath: /var/log/nginx
+
+    # --- Sidecar: log shipper simulado ---
+    - name: log-sidecar
+      image: busybox
+      # Espera o nginx criar o access.log e fica seguindo (tail -f).
+      # Tudo que sai daqui aparece em: kubectl logs app-com-sidecar -c log-sidecar
+      command:
+        - sh
+        - -c
+        - |
+          echo "[sidecar] aguardando access.log..."
+          while [ ! -f /var/log/nginx/access.log ]; do sleep 1; done
+          echo "[sidecar] arquivo apareceu, seguindo logs:"
+          tail -F /var/log/nginx/access.log
+      volumeMounts:
+        - name: logs
+          mountPath: /var/log/nginx

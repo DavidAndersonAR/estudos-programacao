@@ -1,0 +1,57 @@
+# 🎯 DESAFIO — Deployment de http-echo com 4 réplicas
+#
+# A app `hashicorp/http-echo` é um servidor HTTP minúsculo que responde
+# uma mensagem fixa. Perfeita pra testar rolling update — basta mudar
+# o argumento -text=... e a "versão" muda.
+#
+# TODO: complete os campos marcados com FIXME.
+# Quando estiver tudo certo, vá pro comandos.sh.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echo-app
+  labels:
+    app: echo
+    time: estudo-go
+    modulo: "04"
+spec:
+  # FIXME 1: 4 réplicas
+  replicas: 0
+
+  # FIXME 2: estratégia RollingUpdate com maxUnavailable=1 e maxSurge=2
+  strategy:
+    type: ""
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 0
+
+  selector:
+    matchLabels:
+      app: echo
+      # FIXME 3: adicione um label "tier: frontend" aqui
+      #          (e também no template.metadata.labels abaixo!)
+
+  template:
+    metadata:
+      labels:
+        app: echo
+        # FIXME 4: idem aqui — labels do Pod precisam casar com o selector
+    spec:
+      containers:
+        - name: echo
+          # FIXME 5: usar hashicorp/http-echo:0.2.3
+          image: ""
+          args:
+            # FIXME 6: passe -text="v1 - hello from echo"
+            - "-text="
+            - "-listen=:5678"
+          ports:
+            - containerPort: 5678
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "16Mi"
+            limits:
+              cpu: "50m"
+              memory: "64Mi"

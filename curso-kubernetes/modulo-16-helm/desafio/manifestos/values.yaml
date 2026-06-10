@@ -1,0 +1,28 @@
+# values.yaml DEFAULT do desafio "webapp".
+# Os perfis dev/prod ficam em values-dev.yaml e values-prod.yaml.
+
+replicaCount: 1
+
+image:
+  repository: nginx
+  tag: alpine
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 80
+
+# ConfigMap — vira variaveis de ambiente no container.
+config:
+  APP_ENV: "default"
+  LOG_LEVEL: "info"
+  WELCOME_MSG: "Olá do Helm!"
+
+# Ingress condicional — so cria se enabled=true.
+ingress:
+  enabled: false
+  className: "nginx"
+  host: webapp.local
+  path: /
+
+resources: {}

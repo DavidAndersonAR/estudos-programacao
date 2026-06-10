@@ -1,0 +1,15 @@
+# Override pra ambiente DEV.
+# Use: helm upgrade --install webapp ./manifestos -f manifestos/values-dev.yaml
+
+replicaCount: 1
+
+image:
+  tag: alpine
+
+config:
+  APP_ENV: "dev"
+  LOG_LEVEL: "debug"
+  WELCOME_MSG: "Bem-vindo ao DEV"
+
+ingress:
+  enabled: false   # em dev nao expomos

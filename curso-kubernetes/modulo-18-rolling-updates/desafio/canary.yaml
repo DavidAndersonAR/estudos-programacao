@@ -1,0 +1,93 @@
+# 🎯 DESAFIO — Canary manual (mesmo Service, réplicas desbalanceadas)
+#
+# Truque: 2 Deployments distintos, mas com a MESMA label que o Service casa
+# (app=api). O Service balanceia round-robin entre TODOS os pods que casam.
+# Logo, se você tem 4 pods v1 + 1 pod v2 com a mesma label, ~20% do tráfego
+# vai cair em v2 — esse é o canary.
+#
+# Quer aumentar pra 50%? Escala v2 pra 4 réplicas (4v1 + 4v2 = 50/50).
+# Quer 100%? Escala v2 pra 5 e v1 pra 0 (efetivamente promoveu).
+# Deu ruim? Escala v2 pra 0 e roll back.
+#
+# Sua missão (ver comandos.sh):
+#   1. Aplicar este arquivo (api-v1 com 4 réplicas + api-v2 com 1 réplica + Service).
+#   2. Fazer 20 requisições e contar quantas caíram em v1 vs v2.
+#   3. Promover gradualmente: escalar v2 pra 2, depois 4, depois 5.
+#   4. Quando v2 == 5 e v1 == 0, deletar Deployment v1 (promoção concluída).
+#   5. (Alternativa) Reverter: escalar v2 pra 0 e voltar v1 pra 5.
+---
+# ===== api v1 — estável =====
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-v1
+  labels:
+    app: api
+    track: stable
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: api
+      track: stable
+  template:
+    metadata:
+      labels:
+        app: api        # ← MESMA label que o Service casa
+        track: stable
+        version: v1
+    spec:
+      containers:
+        - name: api
+          image: hashicorp/http-echo:0.2.3
+          args: ["-text=v1-stable", "-listen=:5678"]
+          ports:
+            - containerPort: 5678
+          readinessProbe:
+            httpGet: { path: /, port: 5678 }
+            initialDelaySeconds: 1
+            periodSeconds: 2
+---
+# ===== api v2 — canary =====
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-v2
+  labels:
+    app: api
+    track: canary
+spec:
+  replicas: 1            # ← 1 entre 5 totais → ~20% canary
+  selector:
+    matchLabels:
+      app: api
+      track: canary
+  template:
+    metadata:
+      labels:
+        app: api        # ← MESMA label que o Service casa
+        track: canary
+        version: v2
+    spec:
+      containers:
+        - name: api
+          image: hashicorp/http-echo:0.2.3
+          args: ["-text=v2-canary", "-listen=:5678"]
+          ports:
+            - containerPort: 5678
+          readinessProbe:
+            httpGet: { path: /, port: 5678 }
+            initialDelaySeconds: 1
+            periodSeconds: 2
+---
+# ===== Service — casa por app=api (pega v1 E v2) =====
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+spec:
+  selector:
+    app: api       # NÃO inclui track/version → balanceia entre stable+canary
+  ports:
+    - port: 80
+      targetPort: 5678

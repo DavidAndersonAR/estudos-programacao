@@ -1,0 +1,42 @@
+# Pod com 2 containers compartilhando um emptyDir.
+# - "escritor" escreve uma linha a cada 2s em /shared/log.txt
+# - "leitor" fica fazendo tail -f do mesmo arquivo
+# Lição: emptyDir é a forma padrão de 2 containers do mesmo pod trocarem arquivo.
+#        Mata o pod → o volume (e tudo dentro) some.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-emptydir
+  labels:
+    app: emptydir-demo
+spec:
+  # O volume emptyDir vive no pod, não no container.
+  volumes:
+    - name: compartilhado
+      emptyDir: {}   # {} = padrão (disco do node). Pra usar RAM: emptyDir: { medium: Memory }
+  containers:
+    - name: escritor
+      image: busybox:1.36
+      command: ["sh", "-c"]
+      args:
+        - |
+          i=0
+          while true; do
+            i=$((i+1))
+            echo "$(date) - msg #$i do escritor" >> /shared/log.txt
+            sleep 2
+          done
+      volumeMounts:
+        - name: compartilhado
+          mountPath: /shared      # mesma pasta nos 2 containers
+    - name: leitor
+      image: busybox:1.36
+      command: ["sh", "-c"]
+      args:
+        - |
+          # Espera o arquivo aparecer e segue lendo.
+          until [ -f /shared/log.txt ]; do sleep 1; done
+          tail -f /shared/log.txt
+      volumeMounts:
+        - name: compartilhado
+          mountPath: /shared

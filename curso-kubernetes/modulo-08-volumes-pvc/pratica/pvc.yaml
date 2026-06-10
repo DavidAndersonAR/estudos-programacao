@@ -1,0 +1,15 @@
+# PersistentVolumeClaim — o "pedido" da app.
+# No kind, a StorageClass default ("standard", rancher.io/local-path)
+# vai provisionar um PV automaticamente assim que esse PVC for criado.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dados-pvc
+spec:
+  # Não setamos storageClassName → usa a default do cluster.
+  # Em prod você seria explícito: storageClassName: gp3
+  accessModes:
+    - ReadWriteOnce   # único node escrevendo. Padrão pra disco de bloco.
+  resources:
+    requests:
+      storage: 1Gi    # pedido mínimo. O PV pode vir maior.

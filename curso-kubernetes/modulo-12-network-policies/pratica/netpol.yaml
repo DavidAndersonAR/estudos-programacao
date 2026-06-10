@@ -1,0 +1,40 @@
+# Módulo 12 — Network Policies / Prática
+# Objetivo: banco SÓ pode ser acessado pela api, na porta 5432.
+# Frontend tentando falar com db → BLOQUEADO.
+#
+# Estratégia: default-deny no namespace + uma policy que abre
+# o buraco cirúrgico api → db:5432.
+---
+# 1. DEFAULT-DENY de Ingress em todo o namespace "lab"
+#    Sem isso, qualquer pod fala com qualquer pod.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: lab
+spec:
+  podSelector: {}              # aplica a TODOS os pods do ns
+  policyTypes:
+    - Ingress
+  # sem regras de ingress → tudo bloqueado por padrão
+---
+# 2. Abre SÓ o que precisa: api → db na porta 5432
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: db-aceita-so-api
+  namespace: lab
+spec:
+  podSelector:                 # essa policy se aplica AO db
+    matchLabels:
+      tier: db
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:         # origem permitida: pods com tier=api
+            matchLabels:
+              tier: api
+      ports:
+        - protocol: TCP
+          port: 5432

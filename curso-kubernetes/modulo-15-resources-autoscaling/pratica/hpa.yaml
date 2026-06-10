@@ -1,0 +1,24 @@
+# Módulo 15 — HPA pro php-apache
+#
+# Vai manter o uso médio de CPU em ~50% do request.
+# Se passar, sobe réplicas (até 10). Se cair, desce (até 1).
+
+apiVersion: autoscaling/v2          # v2 = API moderna (suporta métricas múltiplas, behavior etc)
+kind: HorizontalPodAutoscaler
+metadata:
+  name: php-apache
+spec:
+  scaleTargetRef:                    # quem o HPA controla
+    apiVersion: apps/v1
+    kind: Deployment
+    name: php-apache
+  minReplicas: 1                     # nunca desce abaixo disso
+  maxReplicas: 10                    # nunca sobe acima disso
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization            # como % do request, não valor absoluto
+        averageUtilization: 50       # alvo: 50% do `requests.cpu` em média
+  # (sem `behavior` configurado = usa defaults: sobe rápido, desce devagar)

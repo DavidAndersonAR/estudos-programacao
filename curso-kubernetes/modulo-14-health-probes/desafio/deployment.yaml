@@ -1,0 +1,141 @@
+# 🎯 DESAFIO MÓDULO 14 — App lenta + instável
+#
+# CENÁRIO:
+# Sua app tem dois problemas crônicos:
+#   1. Demora ~30s pra subir (carrega coisa pesada na inicialização)
+#   2. Crasheia aleatoriamente (bug intermitente — vamos simular)
+#
+# Sem probes bem configuradas, o K8s vai:
+#   - Matar a app DURANTE o boot (achando que travou)  -> CrashLoopBackOff
+#   - Ou nunca detectar o crash quando ele acontecer   -> tráfego pra pod morto
+#
+# OBJETIVO:
+#   Configurar startup + liveness + readiness de modo que:
+#   ✓ K8s ESPERE pacientemente os 30s de boot SEM matar
+#   ✓ Depois do boot, detecte crashes em até ~20s e reinicie
+#   ✓ Pod só receba tráfego depois de pronto
+#
+# SIMULAÇÃO:
+#   Usamos uma imagem busybox rodando um script que:
+#   - Espera 30s antes de criar /tmp/healthy (boot lento)
+#   - A cada ~60s, sorteia número e talvez apaga /tmp/healthy (crash)
+#   - Mantém /tmp/ready sempre presente (uma vez pronto, fica pronto)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-instavel
+  labels:
+    app: app-instavel
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: app-instavel
+  template:
+    metadata:
+      labels:
+        app: app-instavel
+    spec:
+      containers:
+        - name: app
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              echo "[boot] iniciando, demorando 30s..."
+              sleep 30
+              echo "[boot] pronto! criando /tmp/healthy e /tmp/ready"
+              touch /tmp/healthy /tmp/ready
+              # Loop principal: a cada 30s, sorteia número 0-9.
+              # Se sortear 0 ou 1 (~20% chance), apaga /tmp/healthy (simula crash).
+              while true; do
+                sleep 30
+                RAND=$(awk 'BEGIN{srand(); print int(rand()*10)}')
+                if [ "$RAND" -lt 2 ]; then
+                  echo "[crash] perdi a saude! sortei $RAND"
+                  rm -f /tmp/healthy
+                fi
+              done
+          ports:
+            - containerPort: 8080
+
+          # =====================================================
+          # TODO 1: startupProbe
+          # -----------------------------------------------------
+          # A app demora ~30s pra criar /tmp/healthy.
+          # Configure uma startupProbe `exec` que:
+          #   - cheque a existência de /tmp/healthy (use `test -f /tmp/healthy`)
+          #   - tenha period 3s
+          #   - tenha failureThreshold suficiente pra dar ~45s de margem
+          #     (lembre: period × failureThreshold = tempo total tolerado)
+          #
+          # startupProbe:
+          #   exec:
+          #     command: [...]
+          #   periodSeconds: ...
+          #   failureThreshold: ...
+          # =====================================================
+
+          # =====================================================
+          # TODO 2: livenessProbe
+          # -----------------------------------------------------
+          # Depois que startup passar, queremos detectar crash em ~20s.
+          # Configure livenessProbe `exec`:
+          #   - cheque /tmp/healthy
+          #   - period 5s, failureThreshold 3 (3×5=15s, ok)
+          #   - NÃO precisa de initialDelaySeconds (startup cuida disso)
+          # =====================================================
+
+          # =====================================================
+          # TODO 3: readinessProbe
+          # -----------------------------------------------------
+          # Cheque /tmp/ready. period 5s, failureThreshold 2.
+          # Lembrete: readiness REMOVE do Service, não reinicia.
+          # =====================================================
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-instavel
+spec:
+  selector:
+    app: app-instavel
+  ports:
+    - port: 80
+      targetPort: 8080
+
+# =====================================================
+# SOLUÇÃO DE REFERÊNCIA (cole dentro de `spec.containers[0]`)
+# =====================================================
+#
+# startupProbe:
+#   exec:
+#     command: ["test", "-f", "/tmp/healthy"]
+#   periodSeconds: 3
+#   failureThreshold: 15      # 3s × 15 = 45s de tolerância pro boot de 30s
+#
+# livenessProbe:
+#   exec:
+#     command: ["test", "-f", "/tmp/healthy"]
+#   periodSeconds: 5
+#   timeoutSeconds: 2
+#   failureThreshold: 3       # 5s × 3 = 15s pra reiniciar após crash
+#
+# readinessProbe:
+#   exec:
+#     command: ["test", "-f", "/tmp/ready"]
+#   periodSeconds: 5
+#   timeoutSeconds: 2
+#   failureThreshold: 2
+#
+# 💡 Por que NÃO botar só liveness com initialDelaySeconds: 45 ?
+#    - Porque depois do boot, se a app travar, K8s vai ESPERAR 45s a cada
+#      novo container antes de checar de novo. Você perde reação rápida.
+#    - startupProbe "consome" a espera só na primeira vez e some.
+#
+# 💡 Por que readiness checa OUTRO arquivo (/tmp/ready) e não /tmp/healthy ?
+#    - Permite que liveness e readiness reajam de forma INDEPENDENTE.
+#    - Num app real: /healthz checa o processo, /readyz checa BD/cache.

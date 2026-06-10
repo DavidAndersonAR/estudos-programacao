@@ -1,0 +1,109 @@
+# 🎯 DESAFIO DO MÓDULO 13 — SA "ci-bot" com permissão mínima
+#
+# Cenário:
+# Sua pipeline de CI precisa de uma ServiceAccount chamada "ci-bot" no
+# namespace "apps-prod". Ela deve ser capaz de:
+#
+#   ✅ criar deployments
+#   ✅ atualizar deployments (patch + update — pra rolar nova imagem)
+#   ✅ listar e ver deployments (get/list/watch)
+#   ❌ NÃO PODE deletar deployments
+#   ❌ NÃO PODE ler secrets
+#   ❌ NÃO PODE mexer em outros namespaces
+#
+# Preencha os TODOs. A solução de referência está no fim, comentada.
+# Aplique com:  kubectl apply -f manifestos.yaml
+# Teste com:    bash comandos.sh
+
+---
+# Namespace de produção (vamos criar pra não bagunçar default)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: apps-prod
+
+---
+# TODO 1: Crie a ServiceAccount "ci-bot" no namespace "apps-prod"
+# apiVersion: v1
+# kind: ServiceAccount
+# metadata:
+#   name: ???
+#   namespace: ???
+
+---
+# TODO 2: Crie a Role "deploy-manager" no namespace "apps-prod"
+# Dica: deployments estão no apiGroup "apps", não no core ("").
+# Pense bem nos verbs — release? sim. Delete? não.
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: Role
+# metadata:
+#   name: ???
+#   namespace: ???
+# rules:
+# - apiGroups: ["???"]
+#   resources: ["???"]
+#   verbs: ["???", "???", "???", "???", "???"]
+
+---
+# TODO 3: Crie a RoleBinding que liga "ci-bot" à Role "deploy-manager"
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: RoleBinding
+# metadata:
+#   name: ???
+#   namespace: ???
+# subjects:
+# - kind: ???
+#   name: ???
+#   namespace: ???
+# roleRef:
+#   kind: ???
+#   name: ???
+#   apiGroup: rbac.authorization.k8s.io
+
+# =====================================================
+# SOLUÇÃO DE REFERÊNCIA (descomente pra usar)
+# =====================================================
+#
+# ---
+# apiVersion: v1
+# kind: ServiceAccount
+# metadata:
+#   name: ci-bot
+#   namespace: apps-prod
+#
+# ---
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: Role
+# metadata:
+#   name: deploy-manager
+#   namespace: apps-prod
+# rules:
+# # Pode gerenciar Deployments — menos deletar.
+# - apiGroups: ["apps"]
+#   resources: ["deployments"]
+#   verbs: ["get", "list", "watch", "create", "update", "patch"]
+# # Bônus comum: ver status do rollout precisa ler replicasets (read-only).
+# - apiGroups: ["apps"]
+#   resources: ["replicasets"]
+#   verbs: ["get", "list", "watch"]
+#
+# ---
+# apiVersion: rbac.authorization.k8s.io/v1
+# kind: RoleBinding
+# metadata:
+#   name: ci-bot-deploy-manager
+#   namespace: apps-prod
+# subjects:
+# - kind: ServiceAccount
+#   name: ci-bot
+#   namespace: apps-prod
+# roleRef:
+#   kind: Role
+#   name: deploy-manager
+#   apiGroup: rbac.authorization.k8s.io
+#
+# Observações de design:
+# - NÃO listamos "secrets" em resources => ci-bot não lê secrets. ✅
+# - NÃO listamos "delete"/"deletecollection" => ci-bot não apaga deploy. ✅
+# - RoleBinding (não ClusterRoleBinding) + Role no ns apps-prod
+#   => permissão NÃO vaza pra outros namespaces. ✅

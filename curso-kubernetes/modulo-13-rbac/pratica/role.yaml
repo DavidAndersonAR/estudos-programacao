@@ -1,0 +1,12 @@
+# Role "leitor-pods" — permite só ler pods no namespace rbac-lab.
+# Note: apiGroups: [""] é o core API (onde mora "pods").
+# Verbs get/list/watch = leitura completa (1 item, lista, stream de mudanças).
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: leitor-pods
+  namespace: rbac-lab
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]

@@ -1,0 +1,34 @@
+# Ingress: roteia pelo host
+#   - app1.local.test → Service app1
+#   - app2.local.test → Service app2
+#
+# ⚠️  Sem o nginx-ingress controller instalado este objeto NÃO faz nada.
+# Sem entrada no /etc/hosts o curl não vai resolver app1.local.test.
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: roteamento-por-host
+spec:
+  ingressClassName: nginx   # quem implementa as regras
+  rules:
+  - host: app1.local.test
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: app1
+            port:
+              number: 80
+  - host: app2.local.test
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: app2
+            port:
+              number: 80
