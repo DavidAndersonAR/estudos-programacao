@@ -1,0 +1,6 @@
+package com.exemplo.posts;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record Usuario(long id, String name, String username, String email) {}

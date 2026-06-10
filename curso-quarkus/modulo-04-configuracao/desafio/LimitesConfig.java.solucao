@@ -1,0 +1,33 @@
+package com.exemplo;
+
+import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
+
+import java.time.Duration;
+import java.util.Optional;
+
+@ConfigMapping(prefix = "limites")
+public interface LimitesConfig {
+
+    Requisicoes requisicoes();
+    Tamanho tamanho();
+
+    // Bônus
+    Optional<Duration> bloqueioDuracao();
+
+    interface Requisicoes {
+        @WithDefault("60")
+        int porMinuto();
+
+        @WithDefault("10000")
+        int porDia();
+    }
+
+    interface Tamanho {
+        @WithDefault("512")
+        int maxPayloadKb();
+
+        @WithDefault("50")
+        int maxHeaders();
+    }
+}

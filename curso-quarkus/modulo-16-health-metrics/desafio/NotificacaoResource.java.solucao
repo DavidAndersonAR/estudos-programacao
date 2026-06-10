@@ -1,0 +1,60 @@
+package com.exemplo.notificacoes;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+import io.micrometer.core.annotation.Counted;
+import io.micrometer.core.annotation.Timed;
+import io.micrometer.core.instrument.MeterRegistry;
+
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicLong;
+
+@Path("/notificacoes")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+public class NotificacaoResource {
+
+    @Inject
+    MeterRegistry registry;
+
+    private final AtomicLong totalEnviadas = new AtomicLong();
+    private final AtomicLong enviadasOk = new AtomicLong();
+
+    @PostConstruct
+    void registrarGauge() {
+        registry.gauge("notificacoes.taxa_sucesso", this, NotificacaoResource::taxaSucesso);
+    }
+
+    double taxaSucesso() {
+        long total = totalEnviadas.get();
+        return total == 0 ? 1.0 : (enviadasOk.get() * 1.0) / total;
+    }
+
+    @POST
+    @Counted(value = "notificacoes.enviadas_total_anot", description = "Contador via anotacao")
+    @Timed(value = "notificacoes.tempo_envio", histogram = true)
+    public Response enviar(NotificacaoDTO n) throws InterruptedException {
+        Thread.sleep(ThreadLocalRandom.current().nextLong(10, 60));
+        totalEnviadas.incrementAndGet();
+
+        String canal = n.canal == null ? "EMAIL" : n.canal.toUpperCase();
+        registry.counter("notificacoes.enviadas", "canal", canal).increment();
+
+        boolean sucesso = ThreadLocalRandom.current().nextDouble() > 0.1;
+        if (sucesso) {
+            enviadasOk.incrementAndGet();
+            return Response.accepted().entity(n).build();
+        }
+        return Response.serverError().entity("Falhou ao enviar via " + canal).build();
+    }
+
+    public static class NotificacaoDTO {
+        public String destinatario;
+        public String canal;   // EMAIL, SMS, PUSH
+        public String mensagem;
+    }
+}

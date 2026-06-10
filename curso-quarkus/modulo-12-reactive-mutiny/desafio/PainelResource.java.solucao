@@ -1,0 +1,33 @@
+package com.exemplo.painel;
+
+import io.smallrye.mutiny.Uni;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+
+@Path("/painel")
+public class PainelResource {
+
+    @Inject
+    CotacaoExterna cotacao;
+
+    @Inject
+    ClimaExterno clima;
+
+    @GET
+    @Path("/{moeda}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Uni<Painel> painel(@PathParam("moeda") String moeda) {
+        // Cada Uni se recupera sozinho com fallback 0.0 — assim o combine
+        // nunca falha por causa de uma fonte ruim.
+        Uni<Double> u1 = cotacao.buscar(moeda).onFailure().recoverWithItem(0.0);
+        Uni<Double> u2 = clima.temperatura().onFailure().recoverWithItem(0.0);
+
+        // .all().unis(...).asTuple() dispara os dois em paralelo.
+        return Uni.combine().all().unis(u1, u2).asTuple()
+                .onItem().transform(t -> new Painel(moeda.toUpperCase(), t.getItem1(), t.getItem2()));
+    }
+}

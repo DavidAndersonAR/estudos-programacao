@@ -1,0 +1,33 @@
+package com.exemplo.clientes;
+
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+
+@Schema(description = "Cliente cadastrado na loja")
+public class Cliente {
+
+    @Schema(description = "ID único do cliente", example = "10", readOnly = true)
+    public Long id;
+
+    @Schema(description = "Nome completo", example = "Ana Maria Costa", required = true, minLength = 3)
+    public String nome;
+
+    @Schema(description = "E-mail de contato", example = "ana@email.com", required = true, format = "email")
+    public String email;
+
+    @Schema(description = "CPF apenas com números", example = "12345678900", required = true,
+            pattern = "^[0-9]{11}$")
+    public String cpf;
+
+    @Schema(description = "Indica se o cliente está ativo no sistema", example = "true")
+    public boolean ativo = true;
+
+    public Cliente() {}
+
+    public Cliente(Long id, String nome, String email, String cpf, boolean ativo) {
+        this.id = id;
+        this.nome = nome;
+        this.email = email;
+        this.cpf = cpf;
+        this.ativo = ativo;
+    }
+}

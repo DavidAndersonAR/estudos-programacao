@@ -1,0 +1,33 @@
+package com.exemplo.checkout;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import org.eclipse.microprofile.faulttolerance.Bulkhead;
+import org.eclipse.microprofile.faulttolerance.Fallback;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
+
+@ApplicationScoped
+public class RecomendacaoService {
+
+    private final Random random = new Random();
+
+    @Bulkhead(value = 10)
+    @Fallback(fallbackMethod = "recomendacaoFallback")
+    public List<String> recomendar(String produtoId) {
+        try {
+            Thread.sleep(300); // simula CPU pesada
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        if (random.nextInt(100) < 20) {
+            throw new RuntimeException("Falha na recomendação");
+        }
+        return List.of("prod-A", "prod-B", "prod-C");
+    }
+
+    public List<String> recomendacaoFallback(String produtoId) {
+        return Collections.emptyList();
+    }
+}

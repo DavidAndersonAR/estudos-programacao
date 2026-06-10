@@ -1,0 +1,30 @@
+package org.acme.catalogo;
+
+import io.quarkus.hibernate.orm.panache.PanacheRepository;
+import io.quarkus.panache.common.Page;
+import io.quarkus.panache.common.Sort;
+import jakarta.enterprise.context.ApplicationScoped;
+import java.math.BigDecimal;
+import java.util.List;
+
+@ApplicationScoped
+public class ProdutoRepository implements PanacheRepository<Produto> {
+
+    public List<Produto> filtrar(BigDecimal min, BigDecimal max, int pagina, int tamanho) {
+        StringBuilder ql = new StringBuilder("1=1");
+        if (min != null) ql.append(" and preco >= :min");
+        if (max != null) ql.append(" and preco <= :max");
+
+        var params = io.quarkus.panache.common.Parameters.with("_", null);
+        if (min != null) params = params.and("min", min);
+        if (max != null) params = params.and("max", max);
+
+        return find(ql.toString(), Sort.by("preco"), params)
+                .page(Page.of(pagina, tamanho))
+                .list();
+    }
+
+    public List<Produto> daCategoria(Long categoriaId) {
+        return list("categoria.id", categoriaId);
+    }
+}

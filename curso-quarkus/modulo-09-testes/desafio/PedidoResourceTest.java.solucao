@@ -1,0 +1,90 @@
+package com.exemplo;
+
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
+import org.junit.jupiter.api.*;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.*;
+
+@QuarkusTest
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+class PedidoResourceTest {
+
+    static Integer idCriado;   // compartilhado entre os testes 1 e 2
+
+    @Test
+    @Order(1)
+    void criarPedidoValidoDevolve201() {
+        idCriado = given()
+            .contentType(ContentType.JSON)
+            .body("{\"cliente\":\"Maria\",\"valor\":150.0}")
+        .when()
+            .post("/pedidos")
+        .then()
+            .statusCode(201)
+            .body("id", notNullValue())
+            .body("status", is("NOVO"))
+            .extract().path("id");
+    }
+
+    @Test
+    @Order(2)
+    void listarDevolveAoMenosUmPedido() {
+        given()
+          .when().get("/pedidos")
+          .then()
+             .statusCode(200)
+             .body("size()", greaterThanOrEqualTo(1));
+    }
+
+    @Test
+    void buscarInexistenteDevolve404() {
+        given()
+          .when().get("/pedidos/9999")
+          .then()
+             .statusCode(404);
+    }
+
+    @Test
+    void deletarPedidoDevolve204EDepois404() {
+        Integer id = given()
+            .contentType(ContentType.JSON)
+            .body("{\"cliente\":\"João\",\"valor\":50.0}")
+        .when()
+            .post("/pedidos")
+        .then()
+            .statusCode(201)
+            .extract().path("id");
+
+        given()
+          .when().delete("/pedidos/" + id)
+          .then()
+             .statusCode(204);
+
+        given()
+          .when().get("/pedidos/" + id)
+          .then()
+             .statusCode(404);
+    }
+
+    @Test
+    void atualizarComValorNegativoDevolve400() {
+        Integer id = given()
+            .contentType(ContentType.JSON)
+            .body("{\"cliente\":\"Ana\",\"valor\":10.0}")
+        .when()
+            .post("/pedidos")
+        .then()
+            .statusCode(201)
+            .extract().path("id");
+
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"valor\":-1.0}")
+        .when()
+            .put("/pedidos/" + id)
+        .then()
+            .statusCode(400);
+    }
+}

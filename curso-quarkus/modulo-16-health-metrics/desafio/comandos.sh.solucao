@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Roteiro de validacao do desafio. Suba a app com: ./mvnw quarkus:dev
+BASE="http://localhost:8080"
+
+echo "=== 1) Health geral (esperado: UP depois de ~5s do start) ==="
+curl -s $BASE/q/health | jq .
+
+echo
+echo "=== 2) Derrubando o EmailGateway ==="
+curl -s -X POST $BASE/admin/email/down
+echo
+
+echo
+echo "=== 3) Readiness — deve voltar 503 ==="
+curl -s -o /tmp/r.json -w "HTTP %{http_code}\n" $BASE/q/health/ready
+cat /tmp/r.json | jq .
+
+echo
+echo "=== 4) Liveness — deve continuar 200 (independe do email) ==="
+curl -s -o /tmp/l.json -w "HTTP %{http_code}\n" $BASE/q/health/live
+cat /tmp/l.json | jq .
+
+echo
+echo "=== Religando email pra prosseguir ==="
+curl -s -X POST $BASE/admin/email/up
+echo
+
+echo
+echo "=== 5) Enviando 5 notificacoes em canais diferentes ==="
+for canal in EMAIL SMS PUSH EMAIL SMS; do
+  curl -s -X POST $BASE/notificacoes \
+       -H "Content-Type: application/json" \
+       -d "{\"destinatario\":\"x@y.com\",\"canal\":\"$canal\",\"mensagem\":\"oi\"}" \
+       -o /dev/null -w "$canal => HTTP %{http_code}\n"
+done
+
+echo
+echo "=== Metricas do servico ==="
+curl -s $BASE/q/metrics | grep -E "^notificacoes_" | sort

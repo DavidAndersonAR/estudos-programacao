@@ -1,0 +1,27 @@
+package com.exemplo.erros;
+
+import java.util.List;
+
+public class ConflitoNegocioException extends RuntimeException {
+
+    private final String code;
+    private final List<String> motivos;
+
+    public ConflitoNegocioException(String code, String mensagem, List<String> motivos) {
+        super(mensagem);
+        this.code = code;
+        this.motivos = motivos == null ? List.of() : List.copyOf(motivos);
+    }
+
+    public ConflitoNegocioException(String code, String mensagem, String motivo) {
+        this(code, mensagem, List.of(motivo));
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public List<String> getMotivos() {
+        return motivos;
+    }
+}

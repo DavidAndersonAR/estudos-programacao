@@ -1,0 +1,13 @@
+# Info da API
+quarkus.smallrye-openapi.info-title=API de Clientes
+quarkus.smallrye-openapi.info-version=1.0.0
+quarkus.smallrye-openapi.info-description=API de cadastro e manutenção de clientes da loja.
+quarkus.smallrye-openapi.info-contact-name=Equipe Devs
+quarkus.smallrye-openapi.info-contact-email=devs@loja.com
+quarkus.smallrye-openapi.info-license-name=Apache 2.0
+
+# Swagger UI customizado e liberado em prod
+quarkus.swagger-ui.always-include=true
+quarkus.swagger-ui.path=/docs
+quarkus.swagger-ui.title=Clientes - Documentação
+quarkus.swagger-ui.theme=flattop

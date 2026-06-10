@@ -1,0 +1,44 @@
+package org.acme.catalogo;
+
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Response;
+import org.jboss.resteasy.reactive.RestPath;
+import java.net.URI;
+import java.util.List;
+
+@Path("/categorias")
+public class CategoriaResource {
+
+    @Inject
+    ProdutoRepository produtos;
+
+    @GET
+    public List<Categoria> listar() {
+        return Categoria.listAll();
+    }
+
+    @GET
+    @Path("/{id}/produtos")
+    public List<Produto> produtosDe(@RestPath Long id) {
+        if (Categoria.findById(id) == null) throw new NotFoundException();
+        return produtos.daCategoria(id);
+    }
+
+    @POST
+    @Transactional
+    public Response criar(Categoria c) {
+        c.persist();
+        return Response.created(URI.create("/categorias/" + c.id)).entity(c).build();
+    }
+
+    @DELETE
+    @Path("/{id}")
+    @Transactional
+    public Response remover(@RestPath Long id) {
+        // cascade + orphanRemoval na entidade leva os produtos junto.
+        boolean ok = Categoria.deleteById(id);
+        return ok ? Response.noContent().build() : Response.status(404).build();
+    }
+}

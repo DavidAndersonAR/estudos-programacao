@@ -1,0 +1,29 @@
+# Alternativa ao application.properties (precisa da extensão quarkus-config-yaml).
+# Não use os dois ao mesmo tempo — ou comente este arquivo, ou o .properties.
+#
+# Para ativar:
+#   quarkus ext add config-yaml
+#
+# app:
+#   email:
+#     remetente: no-reply@exemplo.com
+#     assunto-padrao: Boas-vindas
+#     copia-oculta: auditoria@exemplo.com
+#   limite-requisicoes: 100
+#   feature:
+#     beta: false
+#
+# "%dev":
+#   app:
+#     email:
+#       remetente: dev@local.test
+#     feature:
+#       beta: true
+#   quarkus:
+#     log:
+#       level: DEBUG
+#
+# "%prod":
+#   quarkus:
+#     log:
+#       level: INFO

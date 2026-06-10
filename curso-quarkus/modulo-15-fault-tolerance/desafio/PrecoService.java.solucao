@@ -1,0 +1,32 @@
+package com.exemplo.checkout;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import org.eclipse.microprofile.faulttolerance.Fallback;
+import org.eclipse.microprofile.faulttolerance.Retry;
+import org.eclipse.microprofile.faulttolerance.Timeout;
+
+import java.time.temporal.ChronoUnit;
+import java.util.Random;
+
+@ApplicationScoped
+public class PrecoService {
+
+    private final Random random = new Random();
+    private double ultimoPrecoConhecido = 99.90;
+
+    @Retry(maxRetries = 2, delay = 100, delayUnit = ChronoUnit.MILLIS)
+    @Timeout(value = 500, unit = ChronoUnit.MILLIS)
+    @Fallback(fallbackMethod = "precoFallback")
+    public double consultarPreco(String produtoId) {
+        if (random.nextInt(100) < 30) {
+            throw new RuntimeException("API de preço fora");
+        }
+        double preco = 50 + random.nextDouble() * 100;
+        ultimoPrecoConhecido = preco;
+        return preco;
+    }
+
+    public double precoFallback(String produtoId) {
+        return ultimoPrecoConhecido;
+    }
+}

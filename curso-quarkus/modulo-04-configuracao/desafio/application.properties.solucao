@@ -1,0 +1,18 @@
+# ===== Defaults =====
+limites.requisicoes.por-minuto=60
+limites.requisicoes.por-dia=10000
+limites.tamanho.max-payload-kb=512
+limites.tamanho.max-headers=50
+
+# ===== Dev (folgado pra testar) =====
+%dev.limites.requisicoes.por-minuto=600
+%dev.limites.requisicoes.por-dia=1000000
+%dev.limites.tamanho.max-payload-kb=4096
+
+# ===== Prod =====
+# Não declare nada aqui. Use env vars:
+#   LIMITES_REQUISICOES_POR_MINUTO=30
+#   LIMITES_REQUISICOES_POR_DIA=50000
+#   LIMITES_TAMANHO_MAX_PAYLOAD_KB=128
+#   LIMITES_TAMANHO_MAX_HEADERS=30
+#   LIMITES_BLOQUEIO_DURACAO=PT5M

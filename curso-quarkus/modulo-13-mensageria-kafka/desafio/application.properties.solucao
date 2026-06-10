@@ -1,0 +1,23 @@
+# ===== Producer =====
+mp.messaging.outgoing.eventos-out.connector=smallrye-kafka
+mp.messaging.outgoing.eventos-out.topic=eventos
+mp.messaging.outgoing.eventos-out.value.serializer=io.quarkus.kafka.client.serialization.ObjectMapperSerializer
+
+# ===== Auditor — grupo "auditoria" (recebe tudo) =====
+mp.messaging.incoming.eventos-auditoria-in.connector=smallrye-kafka
+mp.messaging.incoming.eventos-auditoria-in.topic=eventos
+mp.messaging.incoming.eventos-auditoria-in.group.id=auditoria
+mp.messaging.incoming.eventos-auditoria-in.value.deserializer=io.quarkus.kafka.client.serialization.ObjectMapperDeserializer
+mp.messaging.incoming.eventos-auditoria-in.value.deserializer.type=com.exemplo.eventos.Evento
+# DLT bônus
+mp.messaging.incoming.eventos-auditoria-in.failure-strategy=dead-letter-queue
+mp.messaging.incoming.eventos-auditoria-in.dead-letter-queue.topic=eventos-dlq
+
+# ===== Notificador — grupo "notificacao" (também recebe tudo, grupo diferente) =====
+mp.messaging.incoming.eventos-notificacao-in.connector=smallrye-kafka
+mp.messaging.incoming.eventos-notificacao-in.topic=eventos
+mp.messaging.incoming.eventos-notificacao-in.group.id=notificacao
+mp.messaging.incoming.eventos-notificacao-in.value.deserializer=io.quarkus.kafka.client.serialization.ObjectMapperDeserializer
+mp.messaging.incoming.eventos-notificacao-in.value.deserializer.type=com.exemplo.eventos.Evento
+
+quarkus.http.port=8080

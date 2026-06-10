@@ -1,0 +1,7 @@
+quarkus.rest-client.jsonplaceholder.url=https://jsonplaceholder.typicode.com
+quarkus.rest-client.jsonplaceholder.scope=jakarta.inject.Singleton
+quarkus.rest-client.jsonplaceholder.connect-timeout=2000
+quarkus.rest-client.jsonplaceholder.read-timeout=5000
+
+%dev.quarkus.rest-client.logging.scope=request-response
+%dev.quarkus.log.category."org.jboss.resteasy.reactive.client.logging".level=DEBUG

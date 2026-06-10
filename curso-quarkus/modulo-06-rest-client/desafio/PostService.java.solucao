@@ -1,0 +1,32 @@
+package com.exemplo.posts;
+
+import java.util.List;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.WebApplicationException;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
+
+@ApplicationScoped
+public class PostService {
+
+    @RestClient
+    JsonPlaceholderClient client;
+
+    public PostsDoUsuario buscar(long userId) {
+        try {
+            Usuario u = client.buscarUsuario(userId);
+            List<Post> posts = client.listarPosts(userId);
+            return new PostsDoUsuario(u.name(), posts);
+        } catch (WebApplicationException e) {
+            if (e.getResponse().getStatus() == 404) {
+                throw new UsuarioNaoEncontradoException(userId);
+            }
+            throw e;
+        }
+    }
+
+    public static class UsuarioNaoEncontradoException extends RuntimeException {
+        public UsuarioNaoEncontradoException(long id) {
+            super("Usuário " + id + " não encontrado");
+        }
+    }
+}

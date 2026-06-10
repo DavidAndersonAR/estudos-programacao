@@ -1,0 +1,31 @@
+package com.exemplo.erros;
+
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
+
+import java.util.stream.Collectors;
+
+@Provider
+public class ConflitoNegocioMapper implements ExceptionMapper<ConflitoNegocioException> {
+
+    @Override
+    public Response toResponse(ConflitoNegocioException ex) {
+        ProblemDetail body = ProblemDetail.de(
+                "Conflito de regra de negócio",
+                409,
+                ex.getMessage(),
+                ex.getCode()
+        );
+        // Reaproveita errors usando campo = null e mensagem = motivo.
+        // (Se preferir, adicione List<String> motivos no ProblemDetail.)
+        body.errors = ex.getMotivos().stream()
+                .map(m -> new ProblemDetail.CampoErro(null, m))
+                .collect(Collectors.toList());
+
+        return Response.status(409)
+                .type("application/problem+json")
+                .entity(body)
+                .build();
+    }
+}

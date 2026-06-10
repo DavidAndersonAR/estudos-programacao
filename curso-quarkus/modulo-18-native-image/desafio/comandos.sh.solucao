@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# Solucao do desafio do Modulo 18
+set -e
+
+# 1) Build JVM (referencia)
+./mvnw package -DskipTests
+
+# 2) Build nativo via container (recomendado)
+./mvnw package -Pnative -Dquarkus.native.container-build=true -DskipTests
+
+# 3) Medir startup JVM
+echo "=== JVM startup ==="
+time (java -jar target/quarkus-app/quarkus-run.jar &) ; sleep 4 ; pkill -f quarkus-run.jar || true
+
+# 4) Medir startup Native
+echo "=== Native startup ==="
+time (./target/*-runner &) ; sleep 2 ; pkill -f "runner" || true
+
+# 5) Build da imagem Docker
+docker build -f Dockerfile.native -t meu-app-native .
+
+# 6) Rodar e testar
+docker run -d --name app-native -p 8080:8080 meu-app-native
+sleep 3
+curl -s http://localhost:8080/produtos | head
+
+# 7) Conferir RAM
+docker stats --no-stream app-native
+
+# 8) Limpar
+docker rm -f app-native
+
+# 9) Comparacoes
+echo "=== Tamanhos ==="
+du -h target/quarkus-app/quarkus-run.jar
+du -h target/*-runner
+docker images meu-app-native
+
+# Resultados esperados (aproximados):
+# JVM   startup: 1.5-2.5s    RAM: ~180 MB   jar: ~15 MB
+# Native startup: 0.02-0.05s  RAM: ~35 MB    bin: ~60 MB   imagem: ~120 MB
+
+# Testes de integracao nativos (opcional):
+# ./mvnw verify -Pnative

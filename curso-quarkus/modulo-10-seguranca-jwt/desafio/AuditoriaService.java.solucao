@@ -1,0 +1,22 @@
+package com.exemplo.tarefas;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import java.time.Instant;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+@ApplicationScoped
+public class AuditoriaService {
+
+    public record LogEntry(Instant quando, String usuario, String acao, Long tarefaId) {}
+
+    private final List<LogEntry> log = new CopyOnWriteArrayList<>();
+
+    public void registra(String usuario, String acao, Long tarefaId) {
+        log.add(new LogEntry(Instant.now(), usuario, acao, tarefaId));
+    }
+
+    public List<LogEntry> tudo() {
+        return List.copyOf(log);
+    }
+}

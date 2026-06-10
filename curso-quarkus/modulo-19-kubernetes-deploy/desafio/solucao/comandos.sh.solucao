@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+set -e
+
+# 1. Cluster kind com porta 80 mapeada (pro Ingress funcionar local)
+cat <<EOF | kind create cluster --name desafio --config=-
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 80
+        hostPort: 80
+        protocol: TCP
+EOF
+
+# 2. Ingress controller (nginx)
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+kubectl wait --namespace ingress-nginx \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/component=controller \
+  --timeout=180s
+
+# 3. ConfigMap
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pedidos-config
+data:
+  pedidos.mensagem-padrao: "Pedido criado via ConfigMap do cluster"
+EOF
+
+# 4. Secret
+kubectl create secret generic pedidos-secret \
+  --from-literal=db.password='s3nh4-sup3r-s3cr3t4'
+
+# 5. Build + gera imagem + manifests
+./mvnw package -DskipTests
+
+# 6. Inspecionar o YAML gerado
+cat target/kubernetes/kubernetes.yml
+
+# 7. Carregar imagem no kind
+kind load docker-image davidlab/pedidos-api:1.0 --name desafio
+
+# 8. Aplicar
+kubectl apply -f target/kubernetes/kubernetes.yml
+
+# 9. Esperar as 3 replicas
+kubectl rollout status deployment/pedidos-api
+
+# 10. Validar
+kubectl get pods -l app.kubernetes.io/name=pedidos-api
+kubectl get ingress
+curl -H "Host: pedidos.local" http://localhost/pedidos/mensagem

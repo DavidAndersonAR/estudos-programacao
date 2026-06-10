@@ -1,0 +1,57 @@
+package com.exemplo;
+
+import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Response;
+import org.jboss.resteasy.reactive.RestPath;
+
+import java.util.List;
+
+@Path("/pedidos")
+public class PedidoResource {
+
+    @Inject
+    PedidoService service;
+
+    @GET
+    public List<Pedido> listar() {
+        return service.listar();
+    }
+
+    @GET
+    @Path("/{id}")
+    public Response buscar(@RestPath Long id) {
+        return service.buscar(id)
+                .map(p -> Response.ok(p).build())
+                .orElse(Response.status(404).build());
+    }
+
+    @POST
+    public Response criar(Pedido novo) {
+        try {
+            return Response.status(201).entity(service.criar(novo)).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(400).entity(e.getMessage()).build();
+        }
+    }
+
+    @PUT
+    @Path("/{id}")
+    public Response atualizar(@RestPath Long id, Pedido dados) {
+        try {
+            Pedido atualizado = service.atualizar(id, dados);
+            if (atualizado == null) return Response.status(404).build();
+            return Response.ok(atualizado).build();
+        } catch (IllegalArgumentException e) {
+            return Response.status(400).entity(e.getMessage()).build();
+        }
+    }
+
+    @DELETE
+    @Path("/{id}")
+    public Response deletar(@RestPath Long id) {
+        return service.deletar(id)
+                ? Response.noContent().build()
+                : Response.status(404).build();
+    }
+}

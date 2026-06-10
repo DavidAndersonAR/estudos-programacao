@@ -1,0 +1,17 @@
+package com.exemplo.painel;
+
+import io.smallrye.mutiny.Uni;
+import jakarta.enterprise.context.ApplicationScoped;
+
+import java.time.Duration;
+import java.util.concurrent.ThreadLocalRandom;
+
+@ApplicationScoped
+public class CotacaoExterna {
+
+    public Uni<Double> buscar(String moeda) {
+        double valor = 4.50 + ThreadLocalRandom.current().nextDouble(-0.20, 0.20);
+        return Uni.createFrom().item(Math.round(valor * 100.0) / 100.0)
+                .onItem().delayIt().by(Duration.ofMillis(400));
+    }
+}

@@ -1,0 +1,34 @@
+package com.exemplo.checkout;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import org.eclipse.microprofile.faulttolerance.CircuitBreaker;
+import org.eclipse.microprofile.faulttolerance.Fallback;
+import org.eclipse.microprofile.faulttolerance.Timeout;
+
+import java.time.temporal.ChronoUnit;
+import java.util.Random;
+
+@ApplicationScoped
+public class EstoqueService {
+
+    private final Random random = new Random();
+
+    @Timeout(value = 800, unit = ChronoUnit.MILLIS)
+    @CircuitBreaker(
+        requestVolumeThreshold = 5,
+        failureRatio = 0.6,
+        delay = 10000,
+        successThreshold = 2
+    )
+    @Fallback(fallbackMethod = "estoqueFallback")
+    public String consultarEstoque(String produtoId) {
+        if (random.nextInt(100) < 50) {
+            throw new RuntimeException("API de estoque instável");
+        }
+        return "disponivel";
+    }
+
+    public String estoqueFallback(String produtoId) {
+        return "indisponivel";
+    }
+}

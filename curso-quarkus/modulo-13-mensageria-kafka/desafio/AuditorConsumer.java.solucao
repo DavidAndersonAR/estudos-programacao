@@ -1,0 +1,15 @@
+package com.exemplo.eventos;
+
+import org.eclipse.microprofile.reactive.messaging.Incoming;
+
+import io.quarkus.logging.Log;
+import jakarta.enterprise.context.ApplicationScoped;
+
+@ApplicationScoped
+public class AuditorConsumer {
+
+    @Incoming("eventos-auditoria-in")
+    public void auditar(Evento e) {
+        Log.infof("[AUDITORIA] tipo=%s usuario=%s ts=%s", e.tipo(), e.usuario(), e.timestamp());
+    }
+}

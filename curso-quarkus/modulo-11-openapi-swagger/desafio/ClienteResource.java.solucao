@@ -1,0 +1,113 @@
+package com.exemplo.clientes;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
+
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.parameters.RequestBody;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.eclipse.microprofile.openapi.annotations.security.SecurityRequirement;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+
+@Path("/clientes")
+@Tag(name = "Clientes", description = "Cadastro e manutenção de clientes da loja")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+public class ClienteResource {
+
+    private final List<Cliente> clientes = new ArrayList<>();
+    private final AtomicLong seq = new AtomicLong(1);
+
+    public ClienteResource() {
+        clientes.add(new Cliente(seq.getAndIncrement(), "Ana Costa", "ana@email.com", "12345678900", true));
+        clientes.add(new Cliente(seq.getAndIncrement(), "Bruno Lima", "bruno@email.com", "98765432100", false));
+    }
+
+    @GET
+    @Operation(
+        summary = "Lista todos os clientes",
+        description = "Retorna todos os clientes cadastrados, ativos ou não."
+    )
+    @APIResponse(responseCode = "200", description = "Lista de clientes",
+        content = @Content(schema = @Schema(implementation = Cliente.class, type = SchemaType.ARRAY)))
+    public List<Cliente> listar() {
+        return clientes;
+    }
+
+    @GET
+    @Path("/{id}")
+    @Operation(summary = "Busca cliente por ID",
+        description = "Retorna o cliente correspondente ao ID informado.")
+    @APIResponses({
+        @APIResponse(responseCode = "200", description = "Cliente encontrado",
+            content = @Content(schema = @Schema(implementation = Cliente.class))),
+        @APIResponse(responseCode = "404", description = "Cliente não cadastrado")
+    })
+    public Response buscar(
+        @Parameter(description = "ID do cliente", example = "1", required = true)
+        @PathParam("id") Long id) {
+
+        Optional<Cliente> achado = clientes.stream().filter(c -> c.id.equals(id)).findFirst();
+        return achado.map(c -> Response.ok(c).build())
+                     .orElse(Response.status(Response.Status.NOT_FOUND).build());
+    }
+
+    @POST
+    @Operation(summary = "Cria um novo cliente",
+        description = "Cadastra um cliente. O ID é gerado automaticamente.")
+    @APIResponses({
+        @APIResponse(responseCode = "201", description = "Cliente criado",
+            content = @Content(schema = @Schema(implementation = Cliente.class))),
+        @APIResponse(responseCode = "400", description = "Dados inválidos no payload")
+    })
+    @SecurityRequirement(name = "jwt")
+    public Response criar(
+        @RequestBody(description = "Dados do novo cliente", required = true,
+            content = @Content(schema = @Schema(implementation = Cliente.class)))
+        Cliente novo) {
+
+        if (novo == null || novo.nome == null || novo.email == null) {
+            return Response.status(Response.Status.BAD_REQUEST).build();
+        }
+        novo.id = seq.getAndIncrement();
+        novo.ativo = true;
+        clientes.add(novo);
+        return Response.status(Response.Status.CREATED).entity(novo).build();
+    }
+
+    @PATCH
+    @Path("/{id}/ativar")
+    @Operation(summary = "Reativa um cliente inativo",
+        description = "Marca o cliente como ativo. Retorna 409 se já estiver ativo.")
+    @APIResponses({
+        @APIResponse(responseCode = "200", description = "Cliente reativado",
+            content = @Content(schema = @Schema(implementation = Cliente.class))),
+        @APIResponse(responseCode = "404", description = "Cliente não encontrado"),
+        @APIResponse(responseCode = "409", description = "Cliente já está ativo")
+    })
+    @SecurityRequirement(name = "jwt")
+    public Response ativar(
+        @Parameter(description = "ID do cliente a reativar", example = "2", required = true)
+        @PathParam("id") Long id) {
+
+        Optional<Cliente> achado = clientes.stream().filter(c -> c.id.equals(id)).findFirst();
+        if (achado.isEmpty()) return Response.status(Response.Status.NOT_FOUND).build();
+
+        Cliente c = achado.get();
+        if (c.ativo) return Response.status(Response.Status.CONFLICT).build();
+
+        c.ativo = true;
+        return Response.ok(c).build();
+    }
+}

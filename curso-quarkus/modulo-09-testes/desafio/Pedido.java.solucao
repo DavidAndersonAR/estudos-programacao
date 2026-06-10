@@ -1,0 +1,17 @@
+package com.exemplo;
+
+public class Pedido {
+    public Long id;
+    public String cliente;
+    public Double valor;
+    public String status; // NOVO, PAGO, CANCELADO
+
+    public Pedido() {}
+
+    public Pedido(Long id, String cliente, Double valor, String status) {
+        this.id = id;
+        this.cliente = cliente;
+        this.valor = valor;
+        this.status = status;
+    }
+}

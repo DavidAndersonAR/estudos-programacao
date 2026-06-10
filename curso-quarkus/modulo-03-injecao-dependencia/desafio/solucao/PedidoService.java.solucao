@@ -1,0 +1,46 @@
+package com.exemplo;
+
+import java.util.List;
+import java.util.Optional;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+
+@ApplicationScoped
+public class PedidoService {
+
+    private final PedidoRepository repo;
+
+    @Inject
+    public PedidoService(PedidoRepository repo) {
+        this.repo = repo;
+    }
+
+    @PostConstruct
+    void seed() {
+        // Bônus: cria 1 pedido de exemplo na 1ª chamada.
+        repo.salvar(new Pedido(null, "Cliente Demo",
+                List.of(new Item("Caneta", 4.50, 2)),
+                9.00));
+    }
+
+    public List<Pedido> listarTodos() {
+        return repo.listar();
+    }
+
+    public Optional<Pedido> buscarPorId(Long id) {
+        return repo.buscar(id);
+    }
+
+    public Pedido criar(Pedido entrada) {
+        if (entrada.itens() == null || entrada.itens().isEmpty()) {
+            throw new IllegalArgumentException("pedido sem itens");
+        }
+        double total = entrada.itens().stream()
+                .mapToDouble(i -> i.preco() * i.qtd())
+                .sum();
+        Pedido aSalvar = new Pedido(null, entrada.cliente(), entrada.itens(), total);
+        return repo.salvar(aSalvar);
+    }
+}

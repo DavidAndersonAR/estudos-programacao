@@ -1,0 +1,18 @@
+package com.exemplo.empresas;
+
+import java.util.regex.Pattern;
+
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintValidatorContext;
+
+public class CNPJValidator implements ConstraintValidator<CNPJ, String> {
+
+    private static final Pattern FORMATO =
+            Pattern.compile("\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}");
+
+    @Override
+    public boolean isValid(String valor, ConstraintValidatorContext ctx) {
+        if (valor == null) return true;
+        return FORMATO.matcher(valor).matches();
+    }
+}

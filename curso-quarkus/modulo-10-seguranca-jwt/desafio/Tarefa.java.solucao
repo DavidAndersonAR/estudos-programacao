@@ -1,0 +1,16 @@
+package com.exemplo.tarefas;
+
+public class Tarefa {
+    public long id;
+    public String titulo;
+    public String dono;
+    public boolean concluida;
+
+    public Tarefa() {}
+    public Tarefa(long id, String titulo, String dono) {
+        this.id = id;
+        this.titulo = titulo;
+        this.dono = dono;
+        this.concluida = false;
+    }
+}

@@ -1,0 +1,41 @@
+package com.exemplo;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import org.jboss.logging.Logger;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Path("/limites")
+public class LimitesResource {
+
+    private static final Logger LOG = Logger.getLogger(LimitesResource.class);
+
+    @Inject
+    LimitesConfig limites;
+
+    @PostConstruct
+    void logarLimites() {
+        LOG.infof("Limites no startup: %d req/min, %d req/dia, payload %d KB",
+                limites.requisicoes().porMinuto(),
+                limites.requisicoes().porDia(),
+                limites.tamanho().maxPayloadKb());
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Object> ver() {
+        var out = new HashMap<String, Object>();
+        out.put("requisicoesPorMinuto", limites.requisicoes().porMinuto());
+        out.put("requisicoesPorDia", limites.requisicoes().porDia());
+        out.put("maxPayloadKb", limites.tamanho().maxPayloadKb());
+        out.put("maxHeaders", limites.tamanho().maxHeaders());
+        out.put("bloqueioDuracao", limites.bloqueioDuracao().map(Object::toString).orElse(null));
+        return out;
+    }
+}

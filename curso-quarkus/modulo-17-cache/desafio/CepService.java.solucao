@@ -1,0 +1,51 @@
+package com.exemplo.cache.cep;
+
+import io.quarkus.cache.CacheInvalidate;
+import io.quarkus.cache.CacheInvalidateAll;
+import io.quarkus.cache.CacheKey;
+import io.quarkus.cache.CacheResult;
+import jakarta.enterprise.context.ApplicationScoped;
+import org.jboss.logging.Logger;
+
+@ApplicationScoped
+public class CepService {
+
+    private static final Logger LOG = Logger.getLogger(CepService.class);
+
+    public record EnderecoDTO(String cep, String logradouro, String cidade, String uf) {}
+
+    @CacheResult(cacheName = "cep")
+    public EnderecoDTO buscar(String cep) {
+        LOG.infof("MISS - chamando ViaCEP para %s", cep);
+        dormir(500);
+        return new EnderecoDTO(cep, "Rua Exemplo", "São Paulo", "SP");
+    }
+
+    @CacheInvalidate(cacheName = "cep")
+    public void atualizar(String cep, EnderecoDTO novo) {
+        LOG.infof("Admin atualizou %s -> invalidando cache", cep);
+        // gravaria no banco
+    }
+
+    @CacheInvalidateAll(cacheName = "cep")
+    public void limparTudo() {
+        LOG.info("Limpou todo o cache de CEP");
+    }
+
+    // Bônus: idioma fora da chave
+    @CacheResult(cacheName = "cep-bairro")
+    public EnderecoDTO buscarPorBairro(@CacheKey String cidade,
+                                       @CacheKey String bairro,
+                                       String idioma) {
+        dormir(700);
+        return new EnderecoDTO("00000-000", "Centro do " + bairro, cidade, "SP");
+    }
+
+    private void dormir(long ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+}

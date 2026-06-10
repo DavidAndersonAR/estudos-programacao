@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.exemplo.saudacao";
+option java_outer_classname = "SaudacaoProto";
+
+package saudacao;
+
+// Coloque este arquivo em src/main/proto/saudacao.proto
+service Saudacao {
+  // Unary: 1 request -> 1 response
+  rpc DizerOla (OlaRequest) returns (OlaReply);
+
+  // Server streaming: 1 request -> N responses
+  rpc DizerOlaStream (OlaRequest) returns (stream OlaReply);
+}
+
+message OlaRequest {
+  string nome = 1;
+}
+
+message OlaReply {
+  string mensagem = 1;
+}

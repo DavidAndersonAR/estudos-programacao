@@ -1,0 +1,27 @@
+package com.exemplo.notificacoes;
+
+import jakarta.enterprise.context.ApplicationScoped;
+
+import org.eclipse.microprofile.health.HealthCheck;
+import org.eclipse.microprofile.health.HealthCheckResponse;
+import org.eclipse.microprofile.health.Liveness;
+
+@Liveness
+@ApplicationScoped
+public class MemoriaHealthCheck implements HealthCheck {
+
+    private static final long MINIMO_BYTES = 50L * 1024 * 1024;
+
+    @Override
+    public HealthCheckResponse call() {
+        Runtime rt = Runtime.getRuntime();
+        long livre = rt.freeMemory();
+        long total = rt.totalMemory();
+
+        return HealthCheckResponse.named("Memoria")
+                .status(livre > MINIMO_BYTES)
+                .withData("livre_mb", livre / (1024 * 1024))
+                .withData("total_mb", total / (1024 * 1024))
+                .build();
+    }
+}

@@ -1,0 +1,17 @@
+package com.exemplo.painel;
+
+import io.smallrye.mutiny.Uni;
+import jakarta.enterprise.context.ApplicationScoped;
+
+import java.time.Duration;
+import java.util.concurrent.ThreadLocalRandom;
+
+@ApplicationScoped
+public class ClimaExterno {
+
+    public Uni<Double> temperatura() {
+        double temp = 18.0 + ThreadLocalRandom.current().nextDouble(0.0, 12.0);
+        return Uni.createFrom().item(Math.round(temp * 10.0) / 10.0)
+                .onItem().delayIt().by(Duration.ofMillis(400));
+    }
+}

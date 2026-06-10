@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  mensagem.boas-vindas: "Ola do ConfigMap no cluster!"
+  outra.config: "valor-do-cluster"

@@ -1,0 +1,32 @@
+#!/bin/bash
+# Roteiro de testes do desafio.
+BASE=http://localhost:8080
+
+login() {
+  curl -s -X POST $BASE/login -H "Content-Type: application/json" \
+       -d "{\"usuario\":\"$1\",\"senha\":\"123\"}"
+}
+
+ALICE=$(login alice)
+BOB=$(login bob)
+CAROL=$(login carol)
+
+# Alice cria
+curl -s -X POST $BASE/tarefas -H "Authorization: Bearer $ALICE" \
+     -H "Content-Type: application/json" -d '{"titulo":"comprar pao"}'
+
+# Alice ve so as dela
+curl -s $BASE/tarefas/minhas -H "Authorization: Bearer $ALICE"
+
+# Carol (auditor) ve todas
+curl -s $BASE/tarefas -H "Authorization: Bearer $CAROL"
+
+# Carol tenta criar -> 403
+curl -i -X POST $BASE/tarefas -H "Authorization: Bearer $CAROL" \
+     -H "Content-Type: application/json" -d '{"titulo":"x"}'
+
+# Bob (admin) deleta tarefa 1
+curl -i -X DELETE $BASE/tarefas/1 -H "Authorization: Bearer $BOB"
+
+# Carol ve o log
+curl -s $BASE/auditoria/log -H "Authorization: Bearer $CAROL"

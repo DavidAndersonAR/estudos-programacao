@@ -1,0 +1,6 @@
+package com.exemplo.eventos;
+
+import java.time.Instant;
+
+public record Evento(String tipo, String usuario, String payload, Instant timestamp) {
+}

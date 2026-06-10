@@ -1,0 +1,31 @@
+package com.exemplo;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+
+import jakarta.enterprise.context.ApplicationScoped;
+
+@ApplicationScoped
+public class PedidoRepository {
+
+    private final Map<Long, Pedido> dados = new ConcurrentHashMap<>();
+    private final AtomicLong seq = new AtomicLong(0);
+
+    public List<Pedido> listar() {
+        return List.copyOf(dados.values());
+    }
+
+    public Optional<Pedido> buscar(Long id) {
+        return Optional.ofNullable(dados.get(id));
+    }
+
+    public Pedido salvar(Pedido p) {
+        Long id = p.id() != null ? p.id() : seq.incrementAndGet();
+        Pedido persistido = new Pedido(id, p.cliente(), p.itens(), p.total());
+        dados.put(id, persistido);
+        return persistido;
+    }
+}

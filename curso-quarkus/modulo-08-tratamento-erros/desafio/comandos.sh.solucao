@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# Comandos pra testar o desafio (409 — ConflitoNegocioException).
+# Pré-requisito: `quarkus dev` rodando em http://localhost:8080.
+
+BASE=http://localhost:8080/pedidos
+
+echo "==> 200 OK: cancelar pedido CRIADO (id=1)"
+curl -i -X POST $BASE/1/cancelar
+echo
+
+echo "==> 409 problem+json: cancelar pedido JA ENVIADO (id=2)"
+curl -i -X POST $BASE/2/cancelar
+echo
+
+echo "==> 404 problem+json: cancelar pedido inexistente (id=999)"
+curl -i -X POST $BASE/999/cancelar
+echo
+
+echo "==> 200 OK: criar pedido com número novo"
+curl -i -X POST $BASE \
+  -H "Content-Type: application/json" \
+  -d '{"numero":"PED-003"}'
+echo
+
+echo "==> 409 problem+json: criar pedido com número JA EXISTENTE"
+curl -i -X POST $BASE \
+  -H "Content-Type: application/json" \
+  -d '{"numero":"PED-001"}'
+echo
+
+# Resposta esperada do 409:
+# HTTP/1.1 409 Conflict
+# content-type: application/problem+json
+# {
+#   "title": "Conflito de regra de negócio",
+#   "status": 409,
+#   "detail": "Pedido não pode ser cancelado",
+#   "code": "PEDIDO_JA_ENVIADO",
+#   "errors": [
+#     { "mensagem": "Pedido PED-002 já foi enviado" },
+#     { "mensagem": "Use o fluxo de devolução" }
+#   ]
+# }

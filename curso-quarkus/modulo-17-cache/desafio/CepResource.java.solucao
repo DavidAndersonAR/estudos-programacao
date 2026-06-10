@@ -1,0 +1,51 @@
+package com.exemplo.cache.cep;
+
+import jakarta.inject.Inject;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Path("/cep")
+@Produces(MediaType.APPLICATION_JSON)
+public class CepResource {
+
+    @Inject
+    CepService service;
+
+    @GET
+    @Path("/{cep}")
+    public CepService.EnderecoDTO buscar(@PathParam("cep") String cep) {
+        return service.buscar(cep);
+    }
+
+    @POST
+    @Path("/{cep}")
+    public void atualizar(@PathParam("cep") String cep, CepService.EnderecoDTO novo) {
+        service.atualizar(cep, novo);
+    }
+
+    @DELETE
+    public void limpar() {
+        service.limparTudo();
+    }
+
+    // Bônus: mede tempo de 5 chamadas seguidas
+    @GET
+    @Path("/{cep}/teste-performance")
+    public List<Long> testePerformance(@PathParam("cep") String cep) {
+        List<Long> tempos = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            long inicio = System.currentTimeMillis();
+            service.buscar(cep);
+            tempos.add(System.currentTimeMillis() - inicio);
+        }
+        return tempos;
+    }
+}

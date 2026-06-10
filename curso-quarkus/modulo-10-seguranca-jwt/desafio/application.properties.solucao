@@ -1,0 +1,4 @@
+mp.jwt.verify.publickey.location=publicKey.pem
+mp.jwt.verify.issuer=https://tarefas.dev
+smallrye.jwt.sign.key.location=privateKey.pem
+quarkus.native.resources.includes=publicKey.pem,privateKey.pem

@@ -10,8 +10,9 @@
 | ☕ **Java** | Java moderno (JDK 21), do básico até Spring Boot | 20 | [`curso-java/`](curso-java/) |
 | 🅰️ **TypeScript + Angular** | TS standalone + Angular 17+ + projeto Pokedex | 20 | [`curso-typescript-angular/`](curso-typescript-angular/) |
 | 🐘 **PostgreSQL** | SQL e admin do básico até particionamento/replicação | 20 | [`curso-postgresql/`](curso-postgresql/) |
-| 🐳 **Docker + Kubernetes** | Em breve | — | `curso-docker-kubernetes/` |
-| 🚀 **Quarkus** | Em breve | — | `curso-quarkus/` |
+| 🐳 **Docker** | Containers do `docker run` até multi-stage e segurança | 20 | [`curso-docker/`](curso-docker/) |
+| ☸️ **Kubernetes** | kind, Pods → Deployments → Helm → GitOps | 20 | [`curso-kubernetes/`](curso-kubernetes/) |
+| 🚀 **Quarkus** | Java supersônico para cloud, do REST básico ao native image | 20 | [`curso-quarkus/`](curso-quarkus/) |
 
 Cada curso tem seu próprio `README.md` com a ementa completa e instruções de setup.
 

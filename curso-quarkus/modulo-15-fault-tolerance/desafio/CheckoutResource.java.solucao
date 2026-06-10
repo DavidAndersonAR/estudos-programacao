@@ -1,0 +1,40 @@
+package com.exemplo.checkout;
+
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+
+import java.util.List;
+import java.util.Map;
+
+@Path("/checkout")
+@Produces(MediaType.APPLICATION_JSON)
+public class CheckoutResource {
+
+    @Inject
+    PrecoService precoService;
+
+    @Inject
+    EstoqueService estoqueService;
+
+    @Inject
+    RecomendacaoService recomendacaoService;
+
+    @GET
+    @Path("/{produtoId}")
+    public Map<String, Object> checkout(@PathParam("produtoId") String produtoId) {
+        double preco = precoService.consultarPreco(produtoId);
+        String estoque = estoqueService.consultarEstoque(produtoId);
+        List<String> recomendacoes = recomendacaoService.recomendar(produtoId);
+
+        return Map.of(
+            "produtoId", produtoId,
+            "preco", preco,
+            "estoque", estoque,
+            "recomendacoes", recomendacoes
+        );
+    }
+}

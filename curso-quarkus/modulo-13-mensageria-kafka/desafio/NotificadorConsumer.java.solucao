@@ -1,0 +1,23 @@
+package com.exemplo.eventos;
+
+import java.util.Set;
+
+import org.eclipse.microprofile.reactive.messaging.Incoming;
+
+import io.quarkus.logging.Log;
+import jakarta.enterprise.context.ApplicationScoped;
+
+@ApplicationScoped
+public class NotificadorConsumer {
+
+    private static final Set<String> NOTIFICAVEIS = Set.of("LOGIN", "COMPRA");
+
+    @Incoming("eventos-notificacao-in")
+    public void notificar(Evento e) {
+        if (NOTIFICAVEIS.contains(e.tipo())) {
+            Log.infof("[NOTIFICACAO] enviando para %s (evento %s)", e.usuario(), e.tipo());
+        } else {
+            Log.infof("[NOTIFICACAO] ignorado tipo=%s", e.tipo());
+        }
+    }
+}

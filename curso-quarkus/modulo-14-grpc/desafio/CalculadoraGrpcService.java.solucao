@@ -1,0 +1,43 @@
+package com.exemplo.calculadora;
+
+import io.quarkus.grpc.GrpcService;
+import io.smallrye.mutiny.Uni;
+
+@GrpcService
+public class CalculadoraGrpcService implements Calculadora {
+
+    @Override
+    public Uni<OperacaoReply> somar(OperacaoRequest req) {
+        double r = req.getA() + req.getB();
+        return Uni.createFrom().item(reply(r, req.getA(), "+", req.getB()));
+    }
+
+    @Override
+    public Uni<OperacaoReply> subtrair(OperacaoRequest req) {
+        double r = req.getA() - req.getB();
+        return Uni.createFrom().item(reply(r, req.getA(), "-", req.getB()));
+    }
+
+    @Override
+    public Uni<OperacaoReply> multiplicar(OperacaoRequest req) {
+        double r = req.getA() * req.getB();
+        return Uni.createFrom().item(reply(r, req.getA(), "*", req.getB()));
+    }
+
+    @Override
+    public Uni<OperacaoReply> dividir(OperacaoRequest req) {
+        if (req.getB() == 0.0) {
+            return Uni.createFrom().failure(
+                    new ArithmeticException("Divisão por zero não é permitida"));
+        }
+        double r = req.getA() / req.getB();
+        return Uni.createFrom().item(reply(r, req.getA(), "/", req.getB()));
+    }
+
+    private OperacaoReply reply(double resultado, double a, String op, double b) {
+        return OperacaoReply.newBuilder()
+                .setResultado(resultado)
+                .setExpressao(a + " " + op + " " + b + " = " + resultado)
+                .build();
+    }
+}

@@ -1,0 +1,53 @@
+package com.exemplo;
+
+import jakarta.enterprise.context.ApplicationScoped;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+
+@ApplicationScoped
+public class PedidoService {
+
+    private final Map<Long, Pedido> pedidos = new ConcurrentHashMap<>();
+    private final AtomicLong seq = new AtomicLong(0);
+
+    public List<Pedido> listar() {
+        return List.copyOf(pedidos.values());
+    }
+
+    public Optional<Pedido> buscar(Long id) {
+        return Optional.ofNullable(pedidos.get(id));
+    }
+
+    public Pedido criar(Pedido novo) {
+        if (novo.cliente == null || novo.cliente.isBlank()) {
+            throw new IllegalArgumentException("cliente obrigatório");
+        }
+        if (novo.valor == null || novo.valor < 0) {
+            throw new IllegalArgumentException("valor inválido");
+        }
+        novo.id = seq.incrementAndGet();
+        novo.status = "NOVO";
+        pedidos.put(novo.id, novo);
+        return novo;
+    }
+
+    public Pedido atualizar(Long id, Pedido dados) {
+        Pedido atual = pedidos.get(id);
+        if (atual == null) return null;
+        if (dados.valor != null && dados.valor < 0) {
+            throw new IllegalArgumentException("valor inválido");
+        }
+        if (dados.cliente != null) atual.cliente = dados.cliente;
+        if (dados.valor != null) atual.valor = dados.valor;
+        if (dados.status != null) atual.status = dados.status;
+        return atual;
+    }
+
+    public boolean deletar(Long id) {
+        return pedidos.remove(id) != null;
+    }
+}

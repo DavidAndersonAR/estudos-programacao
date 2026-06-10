@@ -1,0 +1,45 @@
+package com.exemplo.calculadora;
+
+import io.quarkus.grpc.GrpcClient;
+import io.smallrye.mutiny.Uni;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+
+@Path("/calc")
+@Produces(MediaType.TEXT_PLAIN)
+public class CalculadoraResource {
+
+    @GrpcClient("calculadora")
+    Calculadora client;
+
+    @GET
+    @Path("/somar")
+    public Uni<String> somar(@QueryParam("a") double a, @QueryParam("b") double b) {
+        return client.somar(req(a, b)).map(OperacaoReply::getExpressao);
+    }
+
+    @GET
+    @Path("/subtrair")
+    public Uni<String> subtrair(@QueryParam("a") double a, @QueryParam("b") double b) {
+        return client.subtrair(req(a, b)).map(OperacaoReply::getExpressao);
+    }
+
+    @GET
+    @Path("/multiplicar")
+    public Uni<String> multiplicar(@QueryParam("a") double a, @QueryParam("b") double b) {
+        return client.multiplicar(req(a, b)).map(OperacaoReply::getExpressao);
+    }
+
+    @GET
+    @Path("/dividir")
+    public Uni<String> dividir(@QueryParam("a") double a, @QueryParam("b") double b) {
+        return client.dividir(req(a, b)).map(OperacaoReply::getExpressao);
+    }
+
+    private static OperacaoRequest req(double a, double b) {
+        return OperacaoRequest.newBuilder().setA(a).setB(b).build();
+    }
+}

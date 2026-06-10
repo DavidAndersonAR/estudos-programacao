@@ -1,0 +1,5 @@
+package com.exemplo.posts;
+
+import java.util.List;
+
+public record PostsDoUsuario(String nome, List<Post> posts) {}

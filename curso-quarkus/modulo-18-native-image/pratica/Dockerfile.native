@@ -1,0 +1,18 @@
+# Multi-stage: build do binario nativo dentro de container Quarkus + runtime minima.
+
+# ---- Stage 1: build ----
+FROM quay.io/quarkus/ubi-quarkus-mandrel-builder-image:jdk-21 AS build
+USER root
+WORKDIR /code
+COPY --chown=quarkus:quarkus . /code/
+USER quarkus
+RUN ./mvnw -B package -Pnative -DskipTests
+
+# ---- Stage 2: runtime ----
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.4
+WORKDIR /work/
+COPY --from=build /code/target/*-runner /work/application
+RUN chmod 775 /work /work/application
+EXPOSE 8080
+USER 1001
+ENTRYPOINT ["./application", "-Dquarkus.http.host=0.0.0.0"]

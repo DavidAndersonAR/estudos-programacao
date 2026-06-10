@@ -1,0 +1,7 @@
+quarkus.cache.caffeine."cep".expire-after-write=1H
+quarkus.cache.caffeine."cep".maximum-size=10000
+
+quarkus.cache.caffeine."cep-bairro".expire-after-write=1H
+quarkus.cache.caffeine."cep-bairro".maximum-size=2000
+
+quarkus.http.port=8080

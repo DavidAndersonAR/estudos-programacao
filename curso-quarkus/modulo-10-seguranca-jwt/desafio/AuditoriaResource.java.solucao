@@ -1,0 +1,23 @@
+package com.exemplo.tarefas;
+
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import java.util.List;
+
+@Path("/auditoria")
+@Produces(MediaType.APPLICATION_JSON)
+public class AuditoriaResource {
+
+    @Inject AuditoriaService auditoria;
+
+    @GET
+    @Path("/log")
+    @RolesAllowed("auditor")
+    public List<AuditoriaService.LogEntry> log() {
+        return auditoria.tudo();
+    }
+}

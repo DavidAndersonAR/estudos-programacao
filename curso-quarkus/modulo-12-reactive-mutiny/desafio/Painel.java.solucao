@@ -1,0 +1,3 @@
+package com.exemplo.painel;
+
+public record Painel(String moeda, double cotacao, double temperaturaSP) {}

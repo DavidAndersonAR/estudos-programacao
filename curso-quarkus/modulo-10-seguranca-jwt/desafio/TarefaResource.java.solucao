@@ -1,0 +1,73 @@
+package com.exemplo.tarefas;
+
+import io.quarkus.security.ForbiddenException;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.jwt.JsonWebToken;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
+
+@Path("/tarefas")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+public class TarefaResource {
+
+    @Inject JsonWebToken jwt;
+    @Inject AuditoriaService auditoria;
+
+    private static final List<Tarefa> BANCO = new CopyOnWriteArrayList<>();
+    private static final AtomicLong SEQ = new AtomicLong();
+
+    @GET
+    @Path("/minhas")
+    @RolesAllowed({"user", "admin"})
+    public List<Tarefa> minhas() {
+        return BANCO.stream().filter(t -> t.dono.equals(jwt.getName())).toList();
+    }
+
+    @POST
+    @RolesAllowed({"user", "admin"})
+    public Tarefa criar(Tarefa t) {
+        t.id = SEQ.incrementAndGet();
+        t.dono = jwt.getName();   // dono vem SEMPRE do token
+        t.concluida = false;
+        BANCO.add(t);
+        auditoria.registra(jwt.getName(), "criar", t.id);
+        return t;
+    }
+
+    @PATCH
+    @Path("/{id}/concluir")
+    @RolesAllowed({"user", "admin"})
+    public Tarefa concluir(@PathParam("id") long id) {
+        Tarefa t = BANCO.stream().filter(x -> x.id == id).findFirst()
+                        .orElseThrow(() -> new NotFoundException());
+        boolean admin = jwt.getGroups().contains("admin");
+        boolean dono = t.dono.equals(jwt.getName());
+        if (!admin && !dono) throw new ForbiddenException();
+        t.concluida = true;
+        auditoria.registra(jwt.getName(), "concluir", id);
+        return t;
+    }
+
+    @GET
+    @RolesAllowed({"admin", "auditor"})
+    public List<Tarefa> todas() {
+        return List.copyOf(BANCO);
+    }
+
+    @DELETE
+    @Path("/{id}")
+    @RolesAllowed("admin")
+    public Response deletar(@PathParam("id") long id) {
+        boolean removeu = BANCO.removeIf(t -> t.id == id);
+        if (!removeu) throw new NotFoundException();
+        auditoria.registra(jwt.getName(), "deletar", id);
+        return Response.noContent().build();
+    }
+}

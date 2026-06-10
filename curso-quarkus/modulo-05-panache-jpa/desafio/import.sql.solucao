@@ -1,0 +1,13 @@
+INSERT INTO categoria(id, nome) VALUES (1, 'Eletronicos');
+INSERT INTO categoria(id, nome) VALUES (2, 'Livros');
+INSERT INTO categoria(id, nome) VALUES (3, 'Casa');
+
+INSERT INTO produto(id, nome, preco, estoque, categoria_id) VALUES (1, 'Fone Bluetooth', 199.90, 25, 1);
+INSERT INTO produto(id, nome, preco, estoque, categoria_id) VALUES (2, 'Teclado Mecanico', 549.00, 12, 1);
+INSERT INTO produto(id, nome, preco, estoque, categoria_id) VALUES (3, 'Dom Casmurro', 39.90, 60, 2);
+INSERT INTO produto(id, nome, preco, estoque, categoria_id) VALUES (4, 'A Hora da Estrela', 35.00, 40, 2);
+INSERT INTO produto(id, nome, preco, estoque, categoria_id) VALUES (5, 'Cafeteira', 289.00, 8, 3);
+INSERT INTO produto(id, nome, preco, estoque, categoria_id) VALUES (6, 'Jogo de Pratos', 159.90, 15, 3);
+
+ALTER SEQUENCE categoria_seq RESTART WITH 50;
+ALTER SEQUENCE produto_seq RESTART WITH 50;

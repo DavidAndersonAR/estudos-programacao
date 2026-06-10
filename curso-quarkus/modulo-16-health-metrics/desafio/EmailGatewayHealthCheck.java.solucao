@@ -1,0 +1,45 @@
+package com.exemplo.notificacoes;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+
+import org.eclipse.microprofile.health.HealthCheck;
+import org.eclipse.microprofile.health.HealthCheckResponse;
+import org.eclipse.microprofile.health.Readiness;
+
+@Readiness
+@ApplicationScoped
+public class EmailGatewayHealthCheck implements HealthCheck {
+
+    static volatile boolean disponivel = true;
+
+    @Override
+    public HealthCheckResponse call() {
+        return HealthCheckResponse.named("EmailGateway")
+                .status(disponivel)
+                .withData("host", "smtp.exemplo.com")
+                .withData("disponivel", disponivel)
+                .build();
+    }
+}
+
+// Recurso pra alternar em runtime
+@Path("/admin/email")
+class EmailGatewayAdmin {
+
+    @POST
+    @Path("/up")
+    public String up() {
+        EmailGatewayHealthCheck.disponivel = true;
+        return "EmailGateway UP";
+    }
+
+    @POST
+    @Path("/down")
+    public String down() {
+        EmailGatewayHealthCheck.disponivel = false;
+        return "EmailGateway DOWN";
+    }
+}

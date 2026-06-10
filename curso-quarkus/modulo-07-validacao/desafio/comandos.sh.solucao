@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+BASE="http://localhost:8080/empresas"
+
+echo "=== 1) Válido — 201 ==="
+curl -i -X POST "$BASE" -H 'Content-Type: application/json' -d '{
+  "razaoSocial": "Acme Comércio LTDA",
+  "nomeFantasia": "Acme",
+  "cnpj": "12.345.678/0001-00",
+  "emailContato": "contato@acme.com",
+  "quantidadeFuncionarios": 50,
+  "dataFundacao": "2010-05-20",
+  "site": "https://acme.com"
+}'
+echo
+
+echo "=== 2) CNPJ sem máscara — 400 ==="
+curl -i -X POST "$BASE" -H 'Content-Type: application/json' -d '{
+  "razaoSocial": "Acme",
+  "cnpj": "12345678000100",
+  "emailContato": "x@y.com",
+  "quantidadeFuncionarios": 10,
+  "dataFundacao": "2010-01-01"
+}'
+echo
+
+echo "=== 3) Vários erros — 400 com várias violations ==="
+curl -i -X POST "$BASE" -H 'Content-Type: application/json' -d '{
+  "razaoSocial": "AB",
+  "cnpj": "errado",
+  "emailContato": "naoeemail",
+  "quantidadeFuncionarios": 0,
+  "dataFundacao": "2099-01-01",
+  "site": "ftp://acme.com"
+}'
+echo

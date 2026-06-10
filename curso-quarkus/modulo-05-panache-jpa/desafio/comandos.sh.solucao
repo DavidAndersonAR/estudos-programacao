@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+BASE=http://localhost:8080
+
+echo "== Listar categorias =="
+curl -s $BASE/categorias | jq .
+
+echo "== Produtos da categoria 1 =="
+curl -s $BASE/categorias/1/produtos | jq .
+
+echo "== Filtrar produtos entre 100 e 300 =="
+curl -s "$BASE/produtos?precoMin=100&precoMax=300&pagina=0&tamanho=5" | jq .
+
+echo "== Criar categoria =="
+curl -s -X POST $BASE/categorias -H "Content-Type: application/json" \
+  -d '{"nome":"Brinquedos"}' | jq .
+
+echo "== Criar produto (use o id devolvido acima na categoria) =="
+curl -s -X POST $BASE/produtos -H "Content-Type: application/json" \
+  -d '{"nome":"Quebra-cabeca","preco":89.90,"estoque":30,"categoria":{"id":50}}' | jq .
+
+echo "== Aumentar estoque do produto 1 em +5 =="
+curl -s -X PATCH "$BASE/produtos/1/estoque?delta=5" | jq .
+
+echo "== Tentar zerar alem do disponivel (espera 409) =="
+curl -i -X PATCH "$BASE/produtos/1/estoque?delta=-9999"
+
+echo "== Apagar categoria 3 (leva produtos junto) =="
+curl -i -X DELETE $BASE/categorias/3

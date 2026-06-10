@@ -1,0 +1,24 @@
+package org.acme.catalogo;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.quarkus.hibernate.orm.panache.PanacheEntity;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.OneToMany;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+public class Categoria extends PanacheEntity {
+
+    public String nome;
+
+    // JsonIgnore evita serializar a colecao (e o LazyInit junto).
+    @JsonIgnore
+    @OneToMany(mappedBy = "categoria", cascade = CascadeType.ALL, orphanRemoval = true)
+    public List<Produto> produtos = new ArrayList<>();
+
+    public static Categoria porNome(String nome) {
+        return find("nome", nome).firstResult();
+    }
+}

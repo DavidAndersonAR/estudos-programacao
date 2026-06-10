@@ -1,0 +1,77 @@
+package com.exemplo.erros;
+
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import org.jboss.resteasy.reactive.RestPath;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Path("/pedidos")
+public class PedidoResource {
+
+    enum Status { CRIADO, ENVIADO, CANCELADO }
+
+    static class Pedido {
+        public Long id;
+        public String numero;
+        public Status status;
+
+        public Pedido() {
+        }
+
+        public Pedido(Long id, String numero, Status status) {
+            this.id = id;
+            this.numero = numero;
+            this.status = status;
+        }
+    }
+
+    private final Map<Long, Pedido> banco = new ConcurrentHashMap<>(Map.of(
+            1L, new Pedido(1L, "PED-001", Status.CRIADO),
+            2L, new Pedido(2L, "PED-002", Status.ENVIADO)
+    ));
+
+    @POST
+    @Path("/{id}/cancelar")
+    public Pedido cancelar(@RestPath Long id) {
+        Pedido p = banco.get(id);
+        if (p == null) {
+            throw new RecursoNaoEncontradoException("Pedido", id);
+        }
+        if (p.status == Status.ENVIADO) {
+            throw new ConflitoNegocioException(
+                    "PEDIDO_JA_ENVIADO",
+                    "Pedido não pode ser cancelado",
+                    List.of("Pedido " + p.numero + " já foi enviado", "Use o fluxo de devolução")
+            );
+        }
+        if (p.status == Status.CANCELADO) {
+            throw new ConflitoNegocioException(
+                    "PEDIDO_JA_CANCELADO",
+                    "Pedido já está cancelado",
+                    "Pedido " + p.numero + " já estava no estado CANCELADO"
+            );
+        }
+        p.status = Status.CANCELADO;
+        return p;
+    }
+
+    @POST
+    public Pedido criar(Pedido novo) {
+        boolean numeroExiste = banco.values().stream()
+                .anyMatch(p -> p.numero.equalsIgnoreCase(novo.numero));
+        if (numeroExiste) {
+            throw new ConflitoNegocioException(
+                    "PEDIDO_NUMERO_DUPLICADO",
+                    "Número de pedido já cadastrado",
+                    "Já existe pedido com número " + novo.numero
+            );
+        }
+        novo.id = banco.size() + 1L;
+        novo.status = Status.CRIADO;
+        banco.put(novo.id, novo);
+        return novo;
+    }
+}

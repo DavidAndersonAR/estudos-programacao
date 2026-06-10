@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.exemplo.calculadora";
+option java_outer_classname = "CalculadoraProto";
+
+package calculadora;
+
+service Calculadora {
+  rpc Somar       (OperacaoRequest) returns (OperacaoReply);
+  rpc Subtrair    (OperacaoRequest) returns (OperacaoReply);
+  rpc Multiplicar (OperacaoRequest) returns (OperacaoReply);
+  rpc Dividir     (OperacaoRequest) returns (OperacaoReply);
+}
+
+message OperacaoRequest {
+  double a = 1;
+  double b = 2;
+}
+
+message OperacaoReply {
+  double resultado = 1;
+  string expressao = 2;
+}

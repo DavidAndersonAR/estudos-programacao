@@ -1,0 +1,26 @@
+package com.exemplo.eventos;
+
+import java.time.Instant;
+
+import org.eclipse.microprofile.reactive.messaging.Channel;
+import org.eclipse.microprofile.reactive.messaging.Emitter;
+
+import io.quarkus.logging.Log;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.Response;
+
+@Path("/eventos")
+public class EventoResource {
+
+    @Channel("eventos-out")
+    Emitter<Evento> emitter;
+
+    @POST
+    public Response publicar(Evento entrada) {
+        var e = new Evento(entrada.tipo(), entrada.usuario(), entrada.payload(), Instant.now());
+        emitter.send(e);
+        Log.infof("Evento publicado: %s", e);
+        return Response.accepted(e).build();
+    }
+}

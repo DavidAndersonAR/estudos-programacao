@@ -1,0 +1,123 @@
+// SOLUÇÃO DE REFERÊNCIA — Desafio Módulo 02
+// Renomeie pra FilmeResource.java pra rodar.
+// Crie também o arquivo Filme.java mostrado no final deste arquivo.
+
+package com.exemplo;
+
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.core.Response;
+import org.jboss.resteasy.reactive.RestPath;
+import org.jboss.resteasy.reactive.RestQuery;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
+
+@Path("/filmes")
+public class FilmeResource {
+
+    private final Map<Long, Filme> filmes = new ConcurrentHashMap<>();
+    private final AtomicLong sequencia = new AtomicLong(0);
+
+    public FilmeResource() {
+        criarInterno(new Filme(null, "A Origem", 2010, "Nolan", 8.8));
+        criarInterno(new Filme(null, "Interestelar", 2014, "Nolan", 8.7));
+        criarInterno(new Filme(null, "Parasita", 2019, "Bong Joon-ho", 8.6));
+        criarInterno(new Filme(null, "O Quarto", 2003, "Tommy Wiseau", 3.7));
+    }
+
+    // GET /filmes
+    // GET /filmes?diretor=Nolan
+    // GET /filmes?notaMinima=8.0
+    // GET /filmes?diretor=Nolan&notaMinima=8.0
+    @GET
+    public List<Filme> listar(@RestQuery String diretor,
+                              @RestQuery Double notaMinima) {
+        Stream<Filme> stream = filmes.values().stream();
+
+        if (diretor != null && !diretor.isBlank()) {
+            stream = stream.filter(f -> diretor.equalsIgnoreCase(f.diretor));
+        }
+        if (notaMinima != null) {
+            stream = stream.filter(f -> f.nota != null && f.nota >= notaMinima);
+        }
+        return stream.toList();
+    }
+
+    @GET
+    @Path("/{id}")
+    public Response buscar(@RestPath Long id) {
+        Filme f = filmes.get(id);
+        if (f == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        return Response.ok(f).build();
+    }
+
+    @POST
+    public Response criar(Filme novo) {
+        Filme salvo = criarInterno(novo);
+        // 201 + Location é o padrão recomendado pra POST que cria recurso.
+        return Response.status(Response.Status.CREATED)
+                .entity(salvo)
+                .header("Location", "/filmes/" + salvo.id)
+                .build();
+    }
+
+    @PUT
+    @Path("/{id}")
+    public Response atualizar(@RestPath Long id, Filme dados) {
+        if (!filmes.containsKey(id)) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        dados.id = id;
+        filmes.put(id, dados);
+        return Response.ok(dados).build();
+    }
+
+    @DELETE
+    @Path("/{id}")
+    public Response remover(@RestPath Long id) {
+        Filme removido = filmes.remove(id);
+        if (removido == null) {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+        return Response.noContent().build();
+    }
+
+    private Filme criarInterno(Filme f) {
+        f.id = sequencia.incrementAndGet();
+        filmes.put(f.id, f);
+        return f;
+    }
+}
+
+/* ============================================================
+   Arquivo Filme.java (crie separado, no mesmo pacote):
+
+package com.exemplo;
+
+public class Filme {
+    public Long id;
+    public String nome;
+    public Integer ano;
+    public String diretor;
+    public Double nota;
+
+    public Filme() {}
+
+    public Filme(Long id, String nome, Integer ano, String diretor, Double nota) {
+        this.id = id;
+        this.nome = nome;
+        this.ano = ano;
+        this.diretor = diretor;
+        this.nota = nota;
+    }
+}
+   ============================================================ */

@@ -1,0 +1,29 @@
+package com.exemplo.posts;
+
+import jakarta.inject.Inject;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+
+@Path("/usuarios")
+@Produces(MediaType.APPLICATION_JSON)
+public class PostResource {
+
+    @Inject
+    PostService service;
+
+    @GET
+    @Path("/{id}/posts")
+    public Response posts(@PathParam("id") long id) {
+        try {
+            return Response.ok(service.buscar(id)).build();
+        } catch (PostService.UsuarioNaoEncontradoException e) {
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity("{\"erro\":\"Usuário não encontrado\"}")
+                .build();
+        }
+    }
+}

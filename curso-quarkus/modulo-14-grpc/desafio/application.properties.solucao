@@ -1,0 +1,7 @@
+quarkus.grpc.server.port=9000
+quarkus.grpc.server.plain-text=true
+
+quarkus.grpc.clients.calculadora.host=localhost
+quarkus.grpc.clients.calculadora.port=9000
+
+quarkus.http.port=8080

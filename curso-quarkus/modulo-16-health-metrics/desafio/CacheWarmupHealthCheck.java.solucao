@@ -1,0 +1,30 @@
+package com.exemplo.notificacoes;
+
+import jakarta.enterprise.context.ApplicationScoped;
+
+import org.eclipse.microprofile.health.HealthCheck;
+import org.eclipse.microprofile.health.HealthCheckResponse;
+import org.eclipse.microprofile.health.Startup;
+
+import java.time.Duration;
+import java.time.Instant;
+
+@Startup
+@ApplicationScoped
+public class CacheWarmupHealthCheck implements HealthCheck {
+
+    private static final Duration WARMUP = Duration.ofSeconds(5);
+    private final Instant inicio = Instant.now();
+
+    @Override
+    public HealthCheckResponse call() {
+        Duration decorrido = Duration.between(inicio, Instant.now());
+        boolean pronto = decorrido.compareTo(WARMUP) >= 0;
+
+        return HealthCheckResponse.named("CacheWarmup")
+                .status(pronto)
+                .withData("decorrido_s", decorrido.toSeconds())
+                .withData("alvo_s", WARMUP.toSeconds())
+                .build();
+    }
+}
