@@ -1,0 +1,69 @@
+<!--
+    Template do desafio — exercita listar(), buscarPorId() e filtrarPorTipo()
+    do PokemonService.
+
+    Usa *ngFor / *ngIf do CommonModule e ngModel do FormsModule.
+-->
+
+<h1>Pokédex completa (mock)</h1>
+
+<!-- ====================== 1) LISTA COMPLETA ====================== -->
+<section>
+    <h2>Todos os pokémons ({{ todos.length }})</h2>
+    <ul>
+        <li *ngFor="let p of todos">
+            <strong>#{{ p.id }}</strong> — {{ p.name }}
+            <em>({{ p.types.join(', ') }})</em>
+        </li>
+    </ul>
+</section>
+
+<hr />
+
+<!-- ====================== 2) BUSCAR POR ID ====================== -->
+<section>
+    <h2>Buscar por ID</h2>
+
+    <input
+        type="number"
+        [(ngModel)]="idBusca"
+        placeholder="Digite o ID (ex: 25)"
+    />
+    <button (click)="buscar()">Buscar</button>
+
+    <div *ngIf="buscouId">
+        <p *ngIf="encontrado; else naoAchou">
+            Achei: <strong>#{{ encontrado.id }} {{ encontrado.name }}</strong>
+            ({{ encontrado.types.join(', ') }})
+        </p>
+        <ng-template #naoAchou>
+            <p>Nenhum pokémon com ID {{ idBusca }}.</p>
+        </ng-template>
+    </div>
+</section>
+
+<hr />
+
+<!-- ====================== 3) FILTRAR POR TIPO ====================== -->
+<section>
+    <h2>Filtrar por tipo</h2>
+
+    <input
+        type="text"
+        [(ngModel)]="tipoBusca"
+        placeholder="Ex: fire, water, electric"
+    />
+    <button (click)="filtrar()">Filtrar</button>
+
+    <div *ngIf="filtrou">
+        <p *ngIf="filtrados.length === 0">
+            Nenhum pokémon do tipo "{{ tipoBusca }}".
+        </p>
+        <ul *ngIf="filtrados.length > 0">
+            <li *ngFor="let p of filtrados">
+                #{{ p.id }} — {{ p.name }}
+                <em>({{ p.types.join(', ') }})</em>
+            </li>
+        </ul>
+    </div>
+</section>

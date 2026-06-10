@@ -1,0 +1,29 @@
+<!--
+  DESAFIO — pokemon-lista.component.html
+  ---------------------------------------------------------------------------
+  Cards clicáveis. Cada um leva pra /pokemon/:id (rota lazy).
+  A navegação ganha cross-fade automático por causa do withViewTransitions().
+-->
+
+<h2>📜 Lista de Pokémons</h2>
+
+<div class="grid">
+    @for (poke of pokemons; track poke.id) {
+        <!--
+          @let — variável de template (Angular 18).
+          Aqui evitamos chamar poke.tipos.join(', ') duas vezes (1 no [style]
+          não precisa, mas o ponto é mostrar como @let limpa o HTML).
+        -->
+        @let tiposLabel = poke.tipos.join(' / ');
+
+        <a class="card"
+           [style.background-color]="poke.cor"
+           [routerLink]="['/pokemon', poke.id]">
+            <span class="id">#{{ poke.id }}</span>
+            <span class="nome">{{ poke.nome }}</span>
+            <span class="tipos">{{ tiposLabel }}</span>
+        </a>
+    } @empty {
+        <p>Nenhum pokémon na lista.</p>
+    }
+</div>

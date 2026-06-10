@@ -1,0 +1,49 @@
+<!--
+  Note como TUDO é reativo sem nenhum subscribe:
+   - state.pokemonsFiltrados() é computed: re-renderiza quando lista OU filtro mudam
+   - state.favoritos() atualiza o contador no topo automaticamente
+   - O sub-componente <app-pokemon-card> recebe inputs como signals
+     e emite o evento `favoritar` quando clicado.
+
+  Atalho do template: como `state` está public, lemos `state.xxx()` direto.
+-->
+<main style="font-family: system-ui; padding: 24px; max-width: 800px;">
+  <h1>Pokedex Reativa com Signals</h1>
+
+  <p>
+    <strong>Favoritos:</strong> {{ state.favoritos().length }}
+    &nbsp;|&nbsp;
+    <strong>Mostrando:</strong> {{ state.pokemonsFiltrados().length }} de
+    {{ state.pokemons().length }}
+  </p>
+
+  <!--
+    ngModel faz two-way binding. O (ngModelChange) chama nosso handler
+    que repassa pro service. Em projeto real, daria pra usar
+    `[(ngModel)]="state.filtroAtual"` se o signal fosse "model" — mas
+    sinal por enquanto não é diretamente "two-way bindable", então
+    usamos o handler explícito.
+  -->
+  <label style="display:block; margin: 16px 0;">
+    Filtrar por nome:
+    <input
+      type="text"
+      [ngModel]="state.filtroAtual()"
+      (ngModelChange)="onFiltroChange($event)"
+      placeholder="ex.: char"
+      style="padding: 6px; margin-left: 8px;"
+    />
+  </label>
+
+  <section style="display:flex; flex-wrap:wrap; gap:12px;">
+    @for (poke of state.pokemonsFiltrados(); track poke.id) {
+      <app-pokemon-card
+        [pokemon]="poke"
+        [favorito]="ehFavorito(poke.id)"
+        (favoritar)="state.toggleFavorito($event)"
+      />
+    } @empty {
+      <p style="color:#999;">Nenhum pokémon bate com o filtro "{{ state.filtroAtual() }}".</p>
+    }
+  </section>
+</main>

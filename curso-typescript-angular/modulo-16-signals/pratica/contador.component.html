@@ -1,0 +1,17 @@
+<!--
+  Lê os signals com () — esquecer os parênteses é o erro mais comum.
+  O Angular reativamente atualiza esses bindings sem precisar de Zone.js
+  pra checar tudo: só re-renderiza onde `total` ou `dobro` aparecem.
+-->
+<section style="font-family: system-ui; padding: 24px; max-width: 360px;">
+  <h2>Contador Reativo</h2>
+
+  <p style="font-size: 48px; margin: 8px 0;">{{ total() }}</p>
+  <p style="color: #666;">Dobro: <strong>{{ dobro() }}</strong></p>
+
+  <div style="display: flex; gap: 8px; margin-top: 16px;">
+    <button (click)="decrementar()">−</button>
+    <button (click)="incrementar()">+</button>
+    <button (click)="resetar()">Resetar</button>
+  </div>
+</section>

@@ -1,0 +1,29 @@
+<!--
+  PRÁTICA — Módulo 14: template usando async pipe
+
+  - `pokemon$ | async`        → faz subscribe automático
+  - `as p`                    → dá um nome local pro valor emitido
+  - `@if / @else`             → control flow novo do Angular 17+
+                                (equivalente a *ngIf, mas mais limpo)
+
+  Enquanto o request não voltar, o async pipe emite `null`,
+  então o @else mostra o "Carregando…".
+-->
+
+@if (pokemon$ | async; as p) {
+  <article>
+    <h1>#{{ p.id }} — {{ p.name | titlecase }}</h1>
+    <img [src]="p.sprites.front_default" [alt]="p.name" width="120">
+    <p>Altura: {{ p.height / 10 }} m</p>
+    <p>Peso: {{ p.weight / 10 }} kg</p>
+    <p>
+      Tipos:
+      @for (t of p.types; track t.slot) {
+        <span>{{ t.type.name }}</span>
+        @if (!$last) { <span> / </span> }
+      }
+    </p>
+  </article>
+} @else {
+  <p>Carregando pokémon...</p>
+}

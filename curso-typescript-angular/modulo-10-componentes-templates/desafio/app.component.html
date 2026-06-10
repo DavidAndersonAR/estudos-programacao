@@ -1,0 +1,35 @@
+<!--
+  🎯 DESAFIO — Template do app.component
+  Renderize um grid de cards, passando:
+    - [pokemon]="p"
+    - [favoritado]="estaFavoritado(p.id)"
+    - (favorito)="toggleFavorito($event)"
+-->
+<h1>Pokédex Mini</h1>
+
+<div class="grid">
+    <!-- TODO: itere a lista pokemons e renderize um <app-pokemon-card> por item -->
+    <p>(implemente o @for aqui)</p>
+</div>
+
+<!--
+============================
+SOLUÇÃO DE REFERÊNCIA (copie pra usar)
+============================
+
+<h1>Pokédex Mini</h1>
+
+<div class="grid">
+    @for (p of pokemons; track p.id) {
+        <app-pokemon-card
+            [pokemon]="p"
+            [favoritado]="estaFavoritado(p.id)"
+            (favorito)="toggleFavorito($event)">
+        </app-pokemon-card>
+    }
+</div>
+
+<p style="text-align:center; opacity:0.7;">
+    Favoritados: {{ favoritos.size }}
+</p>
+-->

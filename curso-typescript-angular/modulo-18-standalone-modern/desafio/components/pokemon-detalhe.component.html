@@ -1,0 +1,44 @@
+<!--
+  DESAFIO — pokemon-detalhe.component.html
+  ---------------------------------------------------------------------------
+  Página de detalhes. Mostra um "hero" leve imediatamente e adia o painel
+  pesado de stats até o usuário clicar em "Ver stats" (@defer on interaction).
+-->
+
+<a class="voltar" routerLink="/">← Voltar</a>
+
+<!--
+  Vários @let pra deixar o template enxuto. Sem isso, esses cálculos
+  ficariam num getter na classe (clássico) ou seriam repetidos no HTML.
+-->
+@let tiposLabel = pokemon.tipos.join(' / ');
+@let totalTipos = pokemon.tipos.length;
+@let tituloFormatado = pokemon.nome + ' (#' + pokemon.id + ')';
+
+<section class="hero" [style.background-color]="pokemon.cor">
+    <h2>{{ tituloFormatado }}</h2>
+    <p>Tipos: {{ tiposLabel }}</p>
+
+    @if (totalTipos > 1) {
+        <p>✨ Pokémon multi-tipo</p>
+    }
+
+    <!--
+      #verStats = referência local pro botão. Usada como trigger do @defer.
+      @defer (on interaction(trigger: verStats))
+        → o componente pesado só baixa quando o usuário clicar no botão.
+    -->
+    <button #verStats class="cta" type="button">📊 Ver stats</button>
+</section>
+
+@defer (on interaction(verStats)) {
+    <app-pokemon-stats-pesado [nome]="pokemon.nome" />
+} @placeholder {
+    <div class="placeholder">
+        👆 Clica em <strong>Ver stats</strong> pra carregar o painel pesado.
+    </div>
+} @loading (after 100ms) {
+    <div class="loading">Baixando o painel de stats…</div>
+} @error {
+    <div class="placeholder">❌ Falha ao baixar os stats.</div>
+}

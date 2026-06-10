@@ -1,0 +1,32 @@
+<!-- desafio/busca-pokemons.component.html -->
+<section style="font-family: system-ui; padding: 1rem; max-width: 600px;">
+  <h2>Busca de Pokémons (PokeAPI)</h2>
+
+  <input
+    type="text"
+    placeholder="Digite o nome (ex: char, pika, bulba)"
+    (input)="aoDigitar($any($event.target).value)"
+    style="width: 100%; padding: 0.6rem; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px;"
+  />
+
+  <!-- TODO 5: loading -->
+  <p *ngIf="loading" style="color: #555; margin-top: 0.5rem;">
+    Carregando…
+  </p>
+
+  <!-- TODO 6: erro -->
+  <p *ngIf="erro" style="color: crimson; margin-top: 0.5rem;">
+    {{ erro }}
+  </p>
+
+  <!-- TODO 4: lista de resultados com | async -->
+  <ul style="list-style: none; padding: 0; margin-top: 1rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.75rem;">
+    <li
+      *ngFor="let p of resultados$ | async"
+      style="border: 1px solid #ddd; border-radius: 6px; padding: 0.5rem; text-align: center;"
+    >
+      <img [src]="p.imagem" [alt]="p.nome" width="80" height="80" />
+      <div style="text-transform: capitalize; font-size: 0.9rem;">{{ p.nome }}</div>
+    </li>
+  </ul>
+</section>

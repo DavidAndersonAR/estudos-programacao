@@ -1,0 +1,22 @@
+<!-- pratica/rxjs-exemplos.component.html -->
+<section style="font-family: system-ui; padding: 1rem; max-width: 600px;">
+  <h2>Exemplos RxJS</h2>
+
+  <!-- Exemplo 1: from + map + filter -->
+  <article style="border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem;">
+    <h3>1. from([1,2,3,4,5]) | map(*2) | filter(>4)</h3>
+    <button (click)="disparar()">Disparar stream</button>
+
+    <p>Resultado: <strong>{{ resultadosFrom.join(', ') || '(vazio)' }}</strong></p>
+    <small>Esperado: 6, 8, 10</small>
+  </article>
+
+  <!-- Exemplo 2: fromEvent capturando clicks -->
+  <article style="border: 1px solid #ccc; padding: 1rem;">
+    <h3>2. fromEvent — clique no botão</h3>
+    <button #botaoClick>Clique aqui</button>
+
+    <p>Total de cliques: <strong>{{ cliques }}</strong></p>
+    <p>Última coordenada: <strong>{{ ultimaCoordenada || '(nenhum clique ainda)' }}</strong></p>
+  </article>
+</section>

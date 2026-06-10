@@ -1,0 +1,44 @@
+<!--
+  🎯 DESAFIO — Template do PokemonCard
+
+  Implemente:
+    1. Aplicar [class] dinâmica com base no tipo (use classeTipo())
+    2. <img> com [src] vindo de imagemUrl() e [alt] com o nome
+    3. Mostrar #id e nome em UPPERCASE (pipe)
+    4. @for nos tipos (com track) renderizando uma <span class="badge">
+    5. Botão favorito mostrando ⭐ se favoritado, ☆ se não (use @if)
+    6. (click) chamando aoFavoritar()
+-->
+
+<!-- TODO: substitua o div abaixo pela sua implementação -->
+<div class="card">
+    <p>(implemente o card aqui)</p>
+</div>
+
+<!--
+============================
+SOLUÇÃO DE REFERÊNCIA (copie pra usar)
+============================
+
+<div class="card" [class]="classeTipo()">
+    <img [src]="imagemUrl()" [alt]="pokemon.name" class="sprite">
+
+    <h2>#{{ pokemon.id }} — {{ pokemon.name | uppercase }}</h2>
+
+    @if (pokemon.types.length > 0) {
+        <div class="badges">
+            @for (tipo of pokemon.types; track tipo) {
+                <span class="badge">{{ tipo | uppercase }}</span>
+            }
+        </div>
+    }
+
+    <button class="fav" (click)="aoFavoritar()">
+        @if (favoritado) {
+            ⭐ Favoritado
+        } @else {
+            ☆ Favoritar
+        }
+    </button>
+</div>
+-->

@@ -1,0 +1,17 @@
+<!--
+  DESAFIO — app.component.html
+  ---------------------------------------------------------------------------
+  Layout root: header fixo + outlet do router. A View Transitions API
+  anima automaticamente cada navegação entre lista <-> detalhe.
+-->
+
+<header>
+    <h1>
+        <a routerLink="/">⚡ Pokedex Moderna</a>
+    </h1>
+</header>
+
+<main>
+    <!-- 👇 router-outlet é onde lista ou detalhe vão aparecer -->
+    <router-outlet />
+</main>

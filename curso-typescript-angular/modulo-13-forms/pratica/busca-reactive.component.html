@@ -1,0 +1,51 @@
+<!-- Reactive: o template SÓ conecta com o form que já foi montado no .ts -->
+<section class="card">
+  <h2>Busca Pokémon (Reactive)</h2>
+
+  <!-- [formGroup] liga o form do .ts ao <form> -->
+  <form [formGroup]="form" (ngSubmit)="onSubmit()">
+    <!-- Campo busca -->
+    <label for="busca">Buscar</label>
+    <input
+      id="busca"
+      type="text"
+      formControlName="busca"
+      placeholder="ex: pikachu"
+    />
+    @if (form.controls.busca.invalid && form.controls.busca.touched) {
+      <div class="erro">
+        @if (form.controls.busca.errors?.['required']) {
+          <span>Campo obrigatório.</span>
+        }
+        @if (form.controls.busca.errors?.['minlength']) {
+          <span>Mínimo de 2 letras.</span>
+        }
+      </div>
+    }
+
+    <!-- Select tipo -->
+    <label for="tipo">Tipo</label>
+    <select id="tipo" formControlName="tipo">
+      @for (t of tipos; track t) {
+        <option [value]="t">{{ t }}</option>
+      }
+    </select>
+
+    <!-- Select ordenação -->
+    <label for="ordenarPor">Ordenar por</label>
+    <select id="ordenarPor" formControlName="ordenarPor">
+      @for (o of ordenacoes; track o.valor) {
+        <option [value]="o.valor">{{ o.label }}</option>
+      }
+    </select>
+
+    <div class="acoes">
+      <button type="submit" [disabled]="form.invalid">Buscar</button>
+      <button type="button" (click)="limpar()">Limpar</button>
+    </div>
+
+    <!-- Debug: form.value é um objeto literal com os valores atuais -->
+    <p class="debug">Form: <code>{{ form.value | json }}</code></p>
+    <p class="debug">Válido? <code>{{ form.valid }}</code></p>
+  </form>
+</section>

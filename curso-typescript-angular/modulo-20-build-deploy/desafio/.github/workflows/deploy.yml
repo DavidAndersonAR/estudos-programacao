@@ -1,0 +1,120 @@
+# =============================================================================
+#  Pokedex — Build & Deploy automático
+# =============================================================================
+#  Este workflow:
+#    1. Dispara em todo push na branch `main`
+#    2. Builda o app Angular em modo production
+#    3. Publica no GitHub Pages
+#
+#  Onde colocar este arquivo:
+#    Na RAIZ do seu repositório, dentro de `.github/workflows/deploy.yml`
+#    (NÃO dentro da pasta `desafio/` — esse arquivo aqui é só um exemplo).
+#
+#  Pré-requisitos:
+#    - Repositório no GitHub
+#    - Settings → Pages → Source = "GitHub Actions" (não mais "branch")
+# =============================================================================
+
+name: Deploy Pokedex
+
+# Quando rodar
+on:
+  push:
+    branches: [main]
+  # Permite disparar manualmente pela aba Actions
+  workflow_dispatch:
+
+# Permissões mínimas que o workflow precisa pra publicar no Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Evita dois deploys simultâneos pisando um no outro
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # JOB 1 — Build
+  # ---------------------------------------------------------------------------
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Clona o repositório no runner
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      # Instala o Node.js (use a mesma versão que você usa local)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'  # cacheia node_modules entre runs — builds mais rápidos
+
+      # Instala dependências de forma determinística (usa package-lock.json)
+      - name: Instalar dependências
+        run: npm ci
+
+      # (Opcional) Rodar lint e testes antes de buildar
+      # - name: Lint
+      #   run: npm run lint
+      # - name: Testes
+      #   run: npm test -- --watch=false --browsers=ChromeHeadless
+
+      # Build de produção — note o --base-href pro GitHub Pages
+      # Se seu repo se chama "pokedex", a URL será .../pokedex/
+      # Ajuste se o nome do repo for outro.
+      - name: Build production
+        run: npm run build -- --base-href=/${{ github.event.repository.name }}/
+
+      # Copia index.html → 404.html (truque do SPA fallback no GitHub Pages)
+      - name: Configurar SPA fallback (404 = index)
+        run: cp dist/pokedex/browser/index.html dist/pokedex/browser/404.html
+
+      # Empacota o artefato pra publicação no Pages
+      - name: Upload artifact pro Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/pokedex/browser
+
+  # ---------------------------------------------------------------------------
+  # JOB 2 — Deploy (roda só se o build passar)
+  # ---------------------------------------------------------------------------
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    # URL pública gerada — aparece bonitinho na aba Environments
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+# =============================================================================
+#  ALTERNATIVAS — se você deploya em outra plataforma
+# =============================================================================
+#
+#  Vercel:
+#    - Não precisa de Actions; a integração nativa já faz CI/CD.
+#    - Se quiser controlar via Action, use `amondnet/vercel-action@v25`
+#      e configure os secrets VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID.
+#
+#  Netlify:
+#    - Não precisa de Actions; a integração nativa já faz CI/CD.
+#    - Se quiser via Action: use `nwtgck/actions-netlify@v3`
+#      com NETLIFY_AUTH_TOKEN e NETLIFY_SITE_ID nos secrets.
+#
+#  Firebase Hosting:
+#    - Use `FirebaseExtended/action-hosting-deploy@v0`
+#      com FIREBASE_SERVICE_ACCOUNT_<PROJETO> nos secrets.
+#
+#  Cloudflare Pages:
+#    - Use `cloudflare/pages-action@v1`
+#      com CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID nos secrets.
+# =============================================================================

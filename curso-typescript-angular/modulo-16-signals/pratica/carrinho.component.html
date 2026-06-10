@@ -1,0 +1,32 @@
+<!--
+  @for é a nova diretiva de loop (Angular 17+).
+  Note que iteramos sobre `itens()` (com parênteses, é signal).
+  O `track` é obrigatório — performance da renderização.
+-->
+<section style="font-family: system-ui; padding: 24px; max-width: 420px;">
+  <h2>Carrinho de Compras</h2>
+
+  <div style="display: flex; gap: 8px; margin: 12px 0;">
+    <button (click)="adicionar('Café', 15)">+ Café R$15</button>
+    <button (click)="adicionar('Pão', 8)">+ Pão R$8</button>
+    <button (click)="adicionar('Leite', 6)">+ Leite R$6</button>
+  </div>
+
+  <ul style="list-style: none; padding: 0;">
+    @for (item of itens(); track $index) {
+      <li style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee;">
+        <span>{{ item.nome }} — R$ {{ item.preco }}</span>
+        <button (click)="remover($index)">remover</button>
+      </li>
+    } @empty {
+      <li style="color: #999;">Carrinho vazio. Adicione algo!</li>
+    }
+  </ul>
+
+  <p><strong>Itens:</strong> {{ quantidade() }}</p>
+  <p style="font-size: 20px;"><strong>Total: R$ {{ total() }}</strong></p>
+
+  @if (quantidade() > 0) {
+    <button (click)="limpar()">Limpar carrinho</button>
+  }
+</section>

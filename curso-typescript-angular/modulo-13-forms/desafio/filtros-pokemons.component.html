@@ -1,0 +1,79 @@
+<!--
+  DESAFIO — Template do componente de filtros
+  Conecte os controles, mostre os erros, faça os botões funcionarem.
+-->
+
+<section class="filtros">
+  <h3>Filtros</h3>
+
+  <!-- TODO 1: ligue o [formGroup] -->
+  <form>
+    <!-- TODO 2: input de busca com formControlName="busca" -->
+    <label for="f-busca">Buscar pokémon</label>
+    <input id="f-busca" type="text" placeholder="mínimo 2 letras" />
+
+    <!-- TODO 3: mostre erro de minlength quando touched && invalid -->
+    <!-- exemplo:
+      @if (form.controls.busca.invalid && form.controls.busca.touched) {
+        <div class="erro">Mínimo 2 letras.</div>
+      }
+    -->
+
+    <!-- TODO 4: select de tipo iterando this.tipos -->
+    <label for="f-tipo">Tipo</label>
+    <select id="f-tipo">
+      <!-- @for (t of tipos; track t) { <option [value]="t">{{ t }}</option> } -->
+    </select>
+
+    <!-- TODO 5: checkbox favoritos -->
+    <label class="check">
+      <input type="checkbox" />
+      Apenas favoritos
+    </label>
+
+    <!-- TODO 6: botão limpar chamando limpar() -->
+    <div class="acoes">
+      <button type="button">Limpar</button>
+    </div>
+  </form>
+</section>
+
+<!--
+  ============================================================
+  💡 SOLUÇÃO do template (descomente pra comparar)
+  ============================================================
+
+  <section class="filtros">
+    <h3>Filtros</h3>
+
+    <form [formGroup]="form">
+      <label for="f-busca">Buscar pokémon</label>
+      <input
+        id="f-busca"
+        type="text"
+        formControlName="busca"
+        placeholder="mínimo 2 letras"
+      />
+      @if (form.controls.busca.invalid && form.controls.busca.touched) {
+        <div class="erro">Mínimo 2 letras.</div>
+      }
+
+      <label for="f-tipo">Tipo</label>
+      <select id="f-tipo" formControlName="tipo">
+        @for (t of tipos; track t) {
+          <option [value]="t">{{ t }}</option>
+        }
+      </select>
+
+      <label class="check">
+        <input type="checkbox" formControlName="apenasFavoritos" />
+        Apenas favoritos
+      </label>
+
+      <div class="acoes">
+        <button type="button" (click)="limpar()">Limpar</button>
+      </div>
+    </form>
+  </section>
+  ============================================================
+-->

@@ -1,0 +1,15 @@
+<!--
+  app.component — renderiza um card por pokémon.
+  Demonstra:
+  - @for pra iterar a lista
+  - property binding [pokemon] pra passar dado pro filho (@Input)
+  - event binding (favorito) pra ouvir o filho (@Output)
+-->
+<h1>Pokédex Mini</h1>
+
+@for (p of pokemons; track p.id) {
+    <app-pokemon-card
+        [pokemon]="p"
+        (favorito)="quandoFavoritar($event)">
+    </app-pokemon-card>
+}

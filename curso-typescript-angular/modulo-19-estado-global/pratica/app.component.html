@@ -1,0 +1,48 @@
+<!--
+  app.component.html
+  Três "regiões" reagindo ao mesmo store:
+    1. HEADER     — mostra o contador
+    2. CATÁLOGO   — botões de toggle por item
+    3. FAVORITOS  — lista atual dos IDs marcados
+
+  Mudou em qualquer região, as outras refletem na hora, porque todas leem
+  signals do MESMO singleton (FavoritosStoreService).
+-->
+
+<!-- ============ REGIÃO 1: HEADER COM CONTADOR ============ -->
+<header style="padding: 12px; border-bottom: 1px solid #ccc;">
+    <h1>Pokédex — Favoritos Persistentes</h1>
+    <p>
+        ⭐ Favoritos: <strong>{{ store.total() }}</strong>
+        <button (click)="limpar()" [disabled]="store.vazio()">Limpar tudo</button>
+    </p>
+</header>
+
+<!-- ============ REGIÃO 2: CATÁLOGO COM BOTÕES TOGGLE ============ -->
+<section style="padding: 12px;">
+    <h2>Catálogo</h2>
+    <ul>
+        <li *ngFor="let p of catalogo">
+            #{{ p.id }} — {{ p.nome }}
+            <button (click)="toggle(p.id)">
+                {{ store.ehFavorito(p.id) ? '★ Remover' : '☆ Favoritar' }}
+            </button>
+        </li>
+    </ul>
+</section>
+
+<!-- ============ REGIÃO 3: LISTA DE FAVORITOS ATUAIS ============ -->
+<section style="padding: 12px; background: #f5f5f5;">
+    <h2>Seus favoritos ({{ store.total() }})</h2>
+
+    <p *ngIf="store.vazio()">Nenhum favorito ainda. Clique numa estrela acima.</p>
+
+    <ul *ngIf="!store.vazio()">
+        <li *ngFor="let id of store.favoritos()">
+            ID #{{ id }}
+            <button (click)="toggle(id)">remover</button>
+        </li>
+    </ul>
+
+    <p><em>Feche e reabra a aba — os favoritos continuam aí (localStorage).</em></p>
+</section>

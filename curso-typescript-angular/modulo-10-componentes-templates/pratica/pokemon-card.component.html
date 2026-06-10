@@ -1,0 +1,25 @@
+<!--
+  Template do PokemonCard.
+  Demonstra: interpolation, property binding, event binding,
+  novo control flow (@if/@for) e pipe uppercase.
+-->
+<div class="card">
+    <!-- interpolation + pipe uppercase -->
+    <h2>#{{ pokemon.id }} — {{ pokemon.name | uppercase }}</h2>
+
+    <!-- @if (novo control flow): só mostra a lista se tiver tipos -->
+    @if (pokemon.types.length > 0) {
+        <p>Tipos:</p>
+        <ul>
+            <!-- @for com track obrigatório -->
+            @for (tipo of pokemon.types; track tipo) {
+                <li>{{ tipo | uppercase }}</li>
+            }
+        </ul>
+    } @else {
+        <p>Esse pokémon ainda não tem tipos cadastrados.</p>
+    }
+
+    <!-- event binding: chama método ao clicar -->
+    <button (click)="aoFavoritar()">⭐ Favoritar</button>
+</div>

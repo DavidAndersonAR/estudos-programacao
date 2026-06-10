@@ -1,0 +1,21 @@
+<!-- pratica/busca.component.html -->
+<section style="font-family: system-ui; padding: 1rem; max-width: 500px;">
+  <h2>Busca com debounce</h2>
+
+  <input
+    type="text"
+    placeholder="Digite uma tecnologia (ex: Angular)"
+    (input)="aoDigitar($any($event.target).value)"
+    style="width: 100%; padding: 0.5rem; font-size: 1rem;"
+  />
+
+  <p *ngIf="buscando" style="color: #888;">Buscando…</p>
+
+  <ul>
+    <li *ngFor="let item of resultados$ | async">{{ item }}</li>
+  </ul>
+
+  <small style="color: #555;">
+    Pipeline: debounceTime(300) → distinctUntilChanged() → switchMap(apiMock)
+  </small>
+</section>

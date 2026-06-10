@@ -1,0 +1,38 @@
+<!-- Template-driven: a "configuração" do form vive aqui no HTML -->
+<section class="card">
+  <h2>Busca Pokémon (Template-driven)</h2>
+
+  <!-- #buscaForm="ngForm" expõe o form no template, útil pra checar .valid, .invalid etc. -->
+  <form #buscaForm="ngForm" (ngSubmit)="buscar()">
+    <label for="termo">Nome do Pokémon</label>
+    <input
+      id="termo"
+      name="termo"
+      type="text"
+      [(ngModel)]="termoBusca"
+      #termoCtrl="ngModel"
+      required
+      minlength="2"
+      placeholder="ex: pikachu"
+    />
+
+    <!-- Mostra erro só DEPOIS que o usuário interagiu (touched) -->
+    @if (termoCtrl.invalid && termoCtrl.touched) {
+      <div class="erro">
+        @if (termoCtrl.errors?.['required']) {
+          <span>Digite algo pra buscar.</span>
+        }
+        @if (termoCtrl.errors?.['minlength']) {
+          <span>Pelo menos 2 letras.</span>
+        }
+      </div>
+    }
+
+    <div class="acoes">
+      <button type="submit" [disabled]="buscaForm.invalid">Buscar</button>
+      <button type="button" (click)="limpar()">Limpar</button>
+    </div>
+
+    <p class="debug">Valor atual: <code>{{ termoBusca || '(vazio)' }}</code></p>
+  </form>
+</section>

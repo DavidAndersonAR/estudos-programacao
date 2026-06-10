@@ -1,0 +1,47 @@
+<!--
+  DESAFIO — Módulo 14: template do ListaPokemonsComponent
+
+  Três estados na tela:
+    1. Loading   →  async pipe ainda não emitiu (resultado é null)
+    2. Erro      →  resultado.status === 'erro'
+    3. OK        →  resultado.status === 'ok' (mostra a lista)
+
+  Padrão: SEMPRE tratar os três estados. Sem isso, usuário fica
+  olhando tela em branco quando a API cai.
+-->
+
+<header>
+  <h1>Pokedex — Página {{ pagina() }}</h1>
+  <div>
+    <button (click)="anterior()" [disabled]="pagina() === 1">← Anterior</button>
+    <button (click)="proxima()">Próxima →</button>
+  </div>
+</header>
+
+<!--
+  `lista$() | async` →  chamamos `lista$()` (é um computed) e jogamos
+  o Observable retornado no pipe. O `as r` dá nome local ao resultado.
+-->
+@if (lista$() | async; as r) {
+
+  @if (r.status === 'ok') {
+    <p>Total no banco: {{ r.dados.count }}</p>
+
+    <ul>
+      @for (p of r.dados.results; track p.name) {
+        <li>{{ p.name | titlecase }}</li>
+      } @empty {
+        <li>Nenhum pokémon nesta página.</li>
+      }
+    </ul>
+  }
+
+  @if (r.status === 'erro') {
+    <div role="alert" style="color: crimson;">
+      <strong>Erro:</strong> {{ r.msg }}
+    </div>
+  }
+
+} @else {
+  <p>Carregando lista...</p>
+}

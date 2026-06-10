@@ -1,0 +1,41 @@
+<!--
+  PRATICA — pokemon-card.component.html
+  ---------------------------------------------------------------------------
+  Mostra as informações leves (nome, id, tipos) IMEDIATAMENTE e adia o bloco
+  pesado pra quando o card entrar na viewport.
+-->
+
+<!-- @let cria uma variável local no template (Angular 18). -->
+<!-- Aqui simplificamos: em vez de chamar pokemon.tipos.join(' / ') no HTML
+     várias vezes, guardamos o resultado em "tiposFormatados". -->
+@let tiposFormatados = pokemon.tipos.join(' / ');
+@let totalTipos = pokemon.tipos.length;
+
+<h3>{{ pokemon.nome }}</h3>
+<p class="id">#{{ pokemon.id }} — {{ tiposFormatados }}</p>
+
+@if (totalTipos > 1) {
+    <small>✨ Pokémon multi-tipo ({{ totalTipos }} tipos)</small>
+}
+
+<!--
+  @defer (on viewport)
+  ---------------------------------------------------------------------------
+  - O componente <app-pokemon-detalhes-pesado> só baixa quando o card entra
+    na viewport (IntersectionObserver por baixo dos panos).
+  - @placeholder: o que o usuário vê ENQUANTO o trigger não disparou.
+  - @loading:    o que aparece enquanto o JS tá descendo (com after/minimum
+                 pra evitar flash em conexões rápidas).
+  - @error:      fallback se o import() falhou (rede caiu, etc.).
+-->
+@defer (on viewport) {
+    <app-pokemon-detalhes-pesado [nome]="pokemon.nome" />
+} @placeholder (minimum 300ms) {
+    <div class="placeholder">
+        ⏳ Role pra baixo até esse card entrar na tela…
+    </div>
+} @loading (after 100ms; minimum 500ms) {
+    <div class="loading">Carregando detalhes pesados…</div>
+} @error {
+    <div class="placeholder">❌ Não foi possível carregar os detalhes.</div>
+}

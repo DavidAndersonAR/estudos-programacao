@@ -1,0 +1,22 @@
+<!--
+  PRATICA — app.component.html
+  ---------------------------------------------------------------------------
+  Abre o DevTools (F12) > aba Network. Recarrega a página. Você verá só os
+  cards leves carregados. Conforme rola pra baixo, novos chunks .js do
+  detalhes-pesado descem — um por card que entra na viewport.
+-->
+
+<h1>🔬 Pokedex Standalone — &#64;defer (on viewport)</h1>
+
+<div class="dica">
+    <strong>O que observar:</strong> abra o DevTools &gt; Network &gt; JS.
+    Os chunks do <code>pokemon-detalhes-pesado</code> só descem quando você
+    rola até o card ficar visível.
+</div>
+
+@for (poke of pokemons; track poke.id) {
+    <app-pokemon-card [pokemon]="poke" />
+
+    <!-- Espaço só pra forçar scroll e ver o @defer agindo card a card -->
+    <div class="espaco"></div>
+}
