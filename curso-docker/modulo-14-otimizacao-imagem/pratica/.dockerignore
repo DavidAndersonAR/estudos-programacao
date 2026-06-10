@@ -1,0 +1,25 @@
+# Não mandar pro build context — acelera build e evita gordura
+node_modules
+npm-debug.log
+
+# VCS
+.git
+.gitignore
+
+# Editores
+.vscode
+.idea
+*.swp
+
+# Logs e ambiente
+*.log
+.env
+.env.*
+
+# Docker (não precisa dentro da imagem)
+Dockerfile*
+.dockerignore
+
+# Documentação
+*.md
+comandos.sh

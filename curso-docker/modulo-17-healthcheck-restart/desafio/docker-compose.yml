@@ -1,0 +1,78 @@
+# 🎯 DESAFIO Módulo 17 — Compose com healthcheck declarativo
+#
+# Aqui o healthcheck é declarado no compose (pode sobrescrever o do Dockerfile).
+# Também tem um "client" que só sobe depois do app ficar healthy
+# (demonstra depends_on: condition: service_healthy).
+#
+# COMPLETE os TODOs abaixo.
+
+services:
+  app:
+    build: .
+    # TODO 1: nome do container e mapeamento de porta 3000
+    # container_name: ...
+    # ports:
+    #   - "..."
+
+    # TODO 2: restart policy
+    # Queremos: reinicia sempre, exceto se eu parar manualmente
+    # restart: ...
+
+    # TODO 3: init true (resolve PID 1 / sinais)
+    # init: ...
+
+    # TODO 4: healthcheck (sobrescreve o do Dockerfile)
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+    #   interval: 5s
+    #   timeout: 2s
+    #   retries: 2
+    #   start_period: 3s
+
+  # Serviço de "cliente" — só sobe depois do app estar healthy.
+  # Bate em / até derrubar o healthcheck, e fica observando a auto-recuperação.
+  client:
+    image: curlimages/curl:latest
+    depends_on:
+      app:
+        # TODO 5: condição — só sobe quando app estiver healthy
+        # condition: ...
+    command: >
+      sh -c "
+      echo 'Cliente acordou — vou matar o app fazendo 7 requests';
+      for i in 1 2 3 4 5 6 7; do
+        curl -s http://app:3000/ && sleep 1;
+      done;
+      echo 'Pronto. Agora /health vai falhar e o Docker vai reiniciar.';
+      echo 'Acompanhe com: docker compose ps';
+      sleep 60;
+      "
+
+# ============================
+# SOLUÇÃO DE REFERÊNCIA
+# ============================
+# services:
+#   app:
+#     build: .
+#     container_name: desafio17-app
+#     ports:
+#       - "3000:3000"
+#     restart: unless-stopped
+#     init: true
+#     healthcheck:
+#       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+#       interval: 5s
+#       timeout: 2s
+#       retries: 2
+#       start_period: 3s
+#
+#   client:
+#     image: curlimages/curl:latest
+#     depends_on:
+#       app:
+#         condition: service_healthy
+#     command: >
+#       sh -c "
+#       for i in 1 2 3 4 5 6 7; do curl -s http://app:3000/ && sleep 1; done;
+#       sleep 60;
+#       "

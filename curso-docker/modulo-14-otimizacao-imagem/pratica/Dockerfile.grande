@@ -1,0 +1,33 @@
+# Dockerfile GORDO — tudo errado de propósito.
+# Use isso como "antes" pra comparar com o Dockerfile.otimizado.
+#
+# Problemas embutidos:
+# 1. Base 'node' (completo) — quase 1GB só pra começar
+# 2. apt-get install com pacotes que não usamos
+# 3. RUN separados — cada um vira layer, e o cache do apt fica
+# 4. COPY . . antes de instalar deps — invalida cache toda hora
+# 5. Sem cleanup do apt
+# 6. Sem .dockerignore (vai mandar tudo no contexto)
+
+FROM node:20
+
+WORKDIR /app
+
+# Atualiza e instala um monte de coisa "por garantia" (mau cheiro clássico)
+RUN apt-get update
+RUN apt-get install -y curl
+RUN apt-get install -y git
+RUN apt-get install -y vim
+RUN apt-get install -y wget
+RUN apt-get install -y build-essential
+RUN apt-get install -y python3
+# (sem rm -rf /var/lib/apt/lists/* — cache fica na layer)
+
+# Copia tudo de uma vez (cache vira pó a cada mudança no código)
+COPY . .
+
+# Instala deps DEPOIS do COPY (ordem errada)
+RUN npm install
+
+EXPOSE 3000
+CMD ["node", "app.js"]

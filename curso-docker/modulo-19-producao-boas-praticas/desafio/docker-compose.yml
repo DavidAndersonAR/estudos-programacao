@@ -1,0 +1,200 @@
+# =============================================================================
+# 🎯 DESAFIO — docker-compose.yml de DEV pra transformar em PROD
+#
+# Cada TODO aponta um item do CHECKLIST.md (R4..R9, D1..D8).
+# Sua missão: reescrever este compose cumprindo TODOS os itens.
+# A solução de referência está no FIM do arquivo, entre # SOLUTION # SOLUTION.
+# =============================================================================
+
+services:
+
+  api:
+    # TODO D1 — usar tag imutável (SHA/semver), não :latest
+    # TODO D2 — em prod não se faz build dentro do compose; usar imagem do registry
+    build: .
+    image: minha-api:latest
+
+    container_name: minha-api
+
+    # TODO R4 — restart deve ser unless-stopped ou on-failure (não always)
+    restart: always
+
+    # TODO D3 — em DEV monta código pra hot reload. Em PROD NÃO.
+    volumes:
+      - ./src:/app/src
+      - ./node_modules:/app/node_modules
+
+    # TODO D4 — secret NÃO vai como environment plain.
+    # Usar `secrets:` montado em /run/secrets/<nome>.
+    environment:
+      NODE_ENV: development          # TODO: production
+      LOG_LEVEL: debug                # TODO: info
+      DB_HOST: db
+      DB_USER: appuser
+      DB_PASSWORD: supersecret123     # TODO D4 — REMOVER, usar secret
+      JWT_SIGNING_KEY: dev-key-123    # TODO D4 — REMOVER, usar secret
+
+    # TODO R5 — adicionar limites de recurso (cpus, memory)
+    # TODO R6 — adicionar read_only: true + tmpfs
+    # TODO R7 — adicionar cap_drop: [ALL] + security_opt: no-new-privileges
+    # TODO R8/R9 — adicionar logging driver com rotação
+
+    # TODO: adicionar healthcheck e depends_on com condition: service_healthy
+
+    ports:
+      - "3000:3000"
+
+    networks:
+      - default
+
+  db:
+    image: postgres:latest            # TODO D1 — fixar versão (postgres:16.2-alpine)
+    restart: always                   # TODO R4
+
+    environment:
+      POSTGRES_USER: appuser
+      POSTGRES_DB: appdb
+      POSTGRES_PASSWORD: supersecret123  # TODO D4 — usar POSTGRES_PASSWORD_FILE + secret
+
+    # TODO D7 — banco NÃO precisa expor porta pra fora; comentar isso em prod
+    ports:
+      - "5432:5432"
+
+    # TODO D5 — usar volume nomeado, não bind do host
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+
+    # TODO D6 — banco deve estar em rede backend interna (internal: true)
+
+    networks:
+      - default
+
+# TODO D5 — declarar volumes nomeados
+# TODO D6 — declarar rede `backend` com internal: true e isolar o db
+# TODO D4 — declarar `secrets:` apontando pra arquivos em ./secrets/
+
+# =============================================================================
+# ✅ SOLUÇÃO DE REFERÊNCIA — descomente o bloco SOLUTION abaixo, apague o de cima
+# =============================================================================
+
+# SOLUTION
+# services:
+#   api:
+#     # D1 + D2: tag imutável vindo de variável; sem build em prod
+#     image: ghcr.io/minhaorg/minha-api:${APP_VERSION:?defina APP_VERSION}
+#     container_name: minha-api
+#     restart: unless-stopped              # R4
+#     init: true                           # R3 (alternativa ao tini do Dockerfile)
+#
+#     # R7 — segurança extra
+#     cap_drop: [ALL]
+#     security_opt:
+#       - no-new-privileges:true
+#
+#     # R6 — filesystem imutável + tmp em memória
+#     read_only: true
+#     tmpfs:
+#       - /tmp:size=64M,mode=1777
+#
+#     # R5 — limites de recurso
+#     deploy:
+#       resources:
+#         limits:   { cpus: "1.0", memory: 512M }
+#         reservations: { cpus: "0.25", memory: 128M }
+#       update_config:
+#         parallelism: 1
+#         delay: 10s
+#         order: start-first
+#         failure_action: rollback
+#
+#     # R8 + R9 — log JSON com rotação
+#     logging:
+#       driver: json-file
+#       options:
+#         max-size: "10m"
+#         max-file: "5"
+#
+#     environment:
+#       NODE_ENV: production               # ajustado
+#       LOG_LEVEL: info
+#       DB_HOST: db
+#       DB_USER: appuser
+#       # SEM DB_PASSWORD aqui — vem via secret montado em arquivo
+#
+#     secrets:                             # D4
+#       - db_password
+#       - jwt_signing_key
+#
+#     healthcheck:                         # R1 redundante (orquestrador usa)
+#       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+#       interval: 30s
+#       timeout: 5s
+#       start_period: 15s
+#       retries: 3
+#
+#     depends_on:                          # D8
+#       db:
+#         condition: service_healthy
+#
+#     # D3 — SEM volume de código em prod
+#     ports:
+#       - "3000:3000"
+#
+#     networks: [frontend, backend]
+#
+#   db:
+#     image: postgres:16.2-alpine          # D1
+#     restart: unless-stopped              # R4
+#
+#     environment:
+#       POSTGRES_USER: appuser
+#       POSTGRES_DB: appdb
+#       POSTGRES_PASSWORD_FILE: /run/secrets/db_password   # D4
+#
+#     secrets:
+#       - db_password
+#
+#     # D7 — sem ports: db só fala com a api pela rede interna
+#
+#     volumes:
+#       - pgdata:/var/lib/postgresql/data  # D5
+#
+#     deploy:
+#       resources:
+#         limits: { cpus: "2.0", memory: 1G }
+#
+#     logging:
+#       driver: json-file
+#       options:
+#         max-size: "10m"
+#         max-file: "5"
+#
+#     healthcheck:
+#       test: ["CMD-SHELL", "pg_isready -U appuser -d appdb"]
+#       interval: 10s
+#       timeout: 5s
+#       start_period: 20s
+#       retries: 5
+#
+#     networks: [backend]                  # D6 — só backend
+#
+# volumes:                                 # D5
+#   pgdata:
+#     driver: local
+#
+# networks:
+#   frontend:
+#     driver: bridge
+#   backend:                               # D6
+#     driver: bridge
+#     internal: true
+#
+# secrets:                                 # D4
+#   db_password:
+#     file: ./secrets/db_password.txt
+#   jwt_signing_key:
+#     file: ./secrets/jwt_signing_key.txt
+# SOLUTION
+
+networks:
+  default:

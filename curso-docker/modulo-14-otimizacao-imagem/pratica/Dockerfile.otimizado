@@ -1,0 +1,26 @@
+# Dockerfile OTIMIZADO — aplicando todas as técnicas do módulo.
+#
+# Melhorias vs Dockerfile.grande:
+# 1. Base alpine (~50MB vs ~1GB)
+# 2. .dockerignore exclui node_modules, .git, etc
+# 3. package.json copiado ANTES do código — cache do npm sobrevive
+# 4. npm ci --omit=dev (não instala devDependencies)
+# 5. Sem apt install de coisa que não usamos
+# 6. Usuário não-root (bônus de segurança — Módulo 15)
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# 1. Deps primeiro — cache reaproveita quando só o código muda
+COPY package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+
+# 2. Código depois
+COPY app.js ./
+
+# 3. Roda como usuário não-root (a imagem node:alpine já tem o user 'node')
+USER node
+
+EXPOSE 3000
+CMD ["node", "app.js"]

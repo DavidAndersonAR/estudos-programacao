@@ -1,0 +1,19 @@
+# ❌ Dockerfile RUIM — o cache de deps é destruído toda vez que o código muda.
+#
+# Problema: COPY . . joga TUDO (código + package.json) numa só camada.
+# Quando você mexe num arquivo .js, essa camada invalida, e o
+# 'npm install' (que vem DEPOIS) tem que rodar de novo. Lento.
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# 🚨 Aqui está o erro: copia o projeto INTEIRO antes de instalar deps.
+COPY . .
+
+# Como a camada anterior muda toda vez que QUALQUER arquivo muda,
+# este RUN nunca aproveita cache se você editou qualquer .js.
+RUN npm install
+
+EXPOSE 3000
+CMD ["node", "app.js"]

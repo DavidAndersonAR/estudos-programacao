@@ -1,0 +1,7 @@
+# Evita copiar lixo pro contexto de build (mantém cache estável e build leve).
+node_modules
+npm-debug.log
+.git
+.gitignore
+Dockerfile*
+*.md

@@ -1,0 +1,16 @@
+{
+  "name": "modulo-06-cache-demo",
+  "version": "1.0.0",
+  "description": "App mínimo pra demonstrar cache de camadas Docker",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "lodash": "^4.17.21",
+    "axios": "^1.7.2",
+    "moment": "^2.30.1",
+    "uuid": "^9.0.1"
+  }
+}

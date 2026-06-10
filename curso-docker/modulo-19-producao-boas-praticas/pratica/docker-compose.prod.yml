@@ -1,0 +1,168 @@
+# =============================================================================
+# Módulo 19 — Prática: docker-compose.prod.yml
+# Aplica os itens de RUNTIME + DEPLOY do checklist.
+# Subir com:  docker compose -f docker-compose.prod.yml up -d
+# =============================================================================
+
+services:
+
+  api:
+    # Checklist: [CI/CD] tag imutável (commit SHA), NUNCA :latest em prod.
+    # Aqui o SHA vem de variável de ambiente — o CI exporta antes de subir.
+    image: ghcr.io/minhaorg/minha-api:${APP_VERSION:?defina APP_VERSION (sha do commit)}
+
+    # Checklist: [Runtime] nome previsível ajuda log shipping e debugging.
+    container_name: minha-api
+
+    # Checklist: [Runtime] restart com critério — não é 'always' às cegas.
+    restart: unless-stopped
+
+    # Checklist: [Runtime] limites de recurso — evita 1 serviço comer a máquina.
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+      # Checklist: [Deploy] rolling update sem downtime (válido em Swarm).
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first        # sobe o novo ANTES de derrubar o antigo
+        failure_action: rollback
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+      replicas: 2
+
+    # Checklist: [Segurança] sem capabilities desnecessárias.
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE          # só se precisar escutar em porta < 1024
+
+    # Checklist: [Segurança] filesystem read-only + tmpfs pro que precisa escrever.
+    read_only: true
+    tmpfs:
+      - /tmp:size=64M,mode=1777
+
+    # Checklist: [Segurança] sem privilégios extras e sem escalada.
+    security_opt:
+      - no-new-privileges:true
+
+    # Checklist: [Runtime] init=true equivale ao tini do Dockerfile.
+    # (Pode manter só um dos dois; aqui mostro a opção do compose.)
+    init: true
+
+    # Checklist: [Observabilidade] logs estruturados, com rotação.
+    # O driver json-file por padrão NÃO rotaciona — disco enche silenciosamente.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+        tag: "{{.Name}}/{{.ID}}"
+
+    # Checklist: [Runtime] env de produção. Secrets NÃO vêm aqui — vêm via 'secrets'.
+    environment:
+      NODE_ENV: production
+      LOG_LEVEL: info
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: appuser
+
+    # Checklist: [Segurança] secrets montados como arquivo, não como env exposto no inspect.
+    secrets:
+      - db_password
+      - jwt_signing_key
+
+    # Checklist: [Runtime] healthcheck redundante ao do Dockerfile — útil quando
+    # você troca de imagem base e quer override sem rebuildar.
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+    # Checklist: [Runtime] dependência declarada — mas NÃO espera ficar pronto
+    # (use healthcheck do db + retry no app pra isso).
+    depends_on:
+      db:
+        condition: service_healthy
+
+    networks:
+      - backend
+      - frontend
+
+    ports:
+      - "3000:3000"
+
+  db:
+    image: postgres:16.2-alpine
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_USER: appuser
+      POSTGRES_DB: appdb
+      # Senha vem de secret montado em arquivo:
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+
+    secrets:
+      - db_password
+
+    volumes:
+      # Checklist: [Runtime] dado persistente em volume nomeado (Módulo 07).
+      - pgdata:/var/lib/postgresql/data
+
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1G
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d appdb"]
+      interval: 10s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+
+    networks:
+      - backend                   # apenas backend — db NÃO vê o mundo externo
+
+# =============================================================================
+# Volumes nomeados — sobrevivem a `docker compose down`.
+# =============================================================================
+volumes:
+  pgdata:
+    driver: local
+
+# =============================================================================
+# Networks isoladas — frontend (api ↔ mundo) e backend (api ↔ db).
+# =============================================================================
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
+    internal: true                # backend NÃO tem rota pra internet
+
+# =============================================================================
+# Secrets — montados como arquivo em /run/secrets/<nome>.
+# Em Swarm, vêm do `docker secret create`. Em compose standalone, do arquivo local
+# (ainda assim NÃO commitado: ./secrets/* deve estar no .gitignore).
+# =============================================================================
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+  jwt_signing_key:
+    file: ./secrets/jwt_signing_key.txt

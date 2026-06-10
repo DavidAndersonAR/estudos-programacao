@@ -1,0 +1,10 @@
+{
+  "name": "modulo-14-pratica",
+  "version": "1.0.0",
+  "description": "App de exemplo pra comparar imagem gorda vs otimizada",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {}
+}

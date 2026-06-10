@@ -1,0 +1,104 @@
+# Módulo 12 — Prática: Stack web completa (nginx + api mock + postgres + redis)
+#
+# Demonstra:
+#   - healthchecks em pg e redis
+#   - depends_on com condition: service_healthy
+#   - networks separadas (frontend / backend)
+#   - anchors YAML pra defaults de healthcheck
+#   - variáveis vindas do .env
+#
+# Suba com: docker compose up -d
+# Veja a saúde: docker compose ps
+# Acesse:    http://localhost:${NGINX_PORT}  (página default do nginx)
+#            http://localhost:${API_PORT}/   (API mock — httpd servindo um JSON)
+
+# ────────────────────────────────────────────────
+# Anchors YAML — defaults de healthcheck reutilizáveis
+# (Compose ignora chaves top-level começando com x-)
+# ────────────────────────────────────────────────
+x-healthcheck-defaults: &hc-defaults
+  interval: 10s
+  timeout: 5s
+  retries: 5
+  start_period: 15s
+
+services:
+
+  # ───── Frontend ─────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: pratica-nginx
+    ports:
+      - "${NGINX_PORT}:80"
+    networks:
+      - frontend
+    depends_on:
+      api:
+        condition: service_started   # api é httpd, sobe rápido — basta "started"
+    restart: unless-stopped
+
+  # ───── Backend / API mock ─────
+  # Usamos httpd (Apache) servindo um JSON estático.
+  # Em projeto real seria sua app Node/Python/Go.
+  api:
+    image: httpd:2.4-alpine
+    container_name: pratica-api
+    ports:
+      - "${API_PORT}:80"
+    networks:
+      - frontend   # nginx fala com a api
+      - backend    # api fala com db e redis
+    depends_on:
+      db:
+        condition: service_healthy   # ← só sobe quando pg_isready passar
+      redis:
+        condition: service_healthy
+    # Cria um JSON de exemplo na hora do start
+    command: >
+      sh -c "echo '{\"status\":\"ok\",\"service\":\"api-mock\",\"db\":\"${POSTGRES_DB}\"}'
+      > /usr/local/apache2/htdocs/index.html &&
+      httpd-foreground"
+    restart: unless-stopped
+
+  # ───── Database ─────
+  db:
+    image: postgres:16-alpine
+    container_name: pratica-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - backend
+    healthcheck:
+      # $$ escapa pro shell DENTRO do container; sem isso o Compose
+      # tenta substituir ${POSTGRES_USER} aqui no host antes da hora.
+      <<: *hc-defaults
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+    restart: unless-stopped
+
+  # ───── Cache ─────
+  redis:
+    image: redis:7-alpine
+    container_name: pratica-redis
+    networks:
+      - backend
+    healthcheck:
+      <<: *hc-defaults
+      test: ["CMD", "redis-cli", "ping"]
+    restart: unless-stopped
+
+# ────────────────────────────────────────────────
+# Networks: isolamento entre camadas
+#   - frontend: nginx <-> api
+#   - backend:  api <-> db, api <-> redis
+# nginx NÃO consegue resolver/alcançar db ou redis.
+# ────────────────────────────────────────────────
+networks:
+  frontend:
+  backend:
+
+volumes:
+  pg_data:

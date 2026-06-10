@@ -1,0 +1,118 @@
+# 🎯 DESAFIO MÓDULO 11 — Stack 3 serviços: Redis + Postgres + Adminer
+#
+# Objetivo:
+# Subir uma stack típica de back-end (cache + banco + UI de admin)
+# com tudo persistente, rede compartilhada e restart automático.
+#
+# Requisitos:
+# 1. Postgres 16 — porta interna 5432, volume persistente, user/pass/db via env
+# 2. Redis 7    — porta interna 6379, volume persistente (com appendonly ligado)
+# 3. Adminer    — exposto na porta 8080 do host, conecta ao Postgres
+# 4. Todos na mesma rede nomeada (não usar a default do Compose)
+# 5. restart: unless-stopped em todos
+# 6. Adminer só sobe depois do Postgres (depends_on)
+#
+# Variáveis de ambiente esperadas (documente cada uma):
+#   POSTGRES_USER     — usuário do Postgres
+#   POSTGRES_PASSWORD — senha do Postgres
+#   POSTGRES_DB       — nome do banco inicial criado no boot
+#
+# 💡 Dicas:
+#   - Volumes named se declaram no topo, na seção `volumes:`
+#   - Redes nomeadas se declaram em `networks:` e cada serviço lista quais usa
+#   - Pra Redis persistir, passe: command: redis-server --appendonly yes
+#   - Adminer fala com Postgres pelo nome do serviço (hostname interno)
+
+# ============================
+# SUA SOLUÇÃO ABAIXO
+# ============================
+
+services:
+  # TODO: serviço postgres
+  # postgres:
+  #   image: ...
+  #   restart: ...
+  #   environment:
+  #     POSTGRES_USER: ...
+  #     POSTGRES_PASSWORD: ...
+  #     POSTGRES_DB: ...
+  #   volumes:
+  #     - ...
+  #   networks:
+  #     - ...
+
+  # TODO: serviço redis (com appendonly yes)
+
+  # TODO: serviço adminer (porta 8080, depends_on postgres)
+
+# TODO: declarar volumes named (um pro postgres, um pro redis)
+# volumes:
+#   ...
+
+# TODO: declarar rede compartilhada
+# networks:
+#   ...
+
+# ============================
+# SOLUÇÃO DE REFERÊNCIA
+# ============================
+# Apague o bloco acima (TODOs) e use o YAML abaixo pra conferir,
+# ou cole isto num arquivo separado `docker-compose.solucao.yml` e rode:
+#   docker compose -f docker-compose.solucao.yml up -d
+#
+# ---8<--- COPIE A PARTIR DAQUI ---8<---
+#
+# services:
+#   postgres:
+#     image: postgres:16
+#     restart: unless-stopped
+#     environment:
+#       POSTGRES_USER: ${POSTGRES_USER:-postgres}
+#       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+#       POSTGRES_DB: ${POSTGRES_DB:-appdb}
+#     volumes:
+#       - pg_data:/var/lib/postgresql/data
+#     networks:
+#       - app-net
+#
+#   redis:
+#     image: redis:7-alpine
+#     restart: unless-stopped
+#     command: redis-server --appendonly yes
+#     volumes:
+#       - redis_data:/data
+#     networks:
+#       - app-net
+#
+#   adminer:
+#     image: adminer:4
+#     restart: unless-stopped
+#     ports:
+#       - "8080:8080"
+#     depends_on:
+#       - postgres
+#     networks:
+#       - app-net
+#
+# volumes:
+#   pg_data:
+#   redis_data:
+#
+# networks:
+#   app-net:
+#     driver: bridge
+#
+# ---8<--- ATÉ AQUI ---8<---
+#
+# Notas da solução:
+# - ${VAR:-default} usa o .env (ou variável do shell); se faltar, cai no default.
+# - Declaramos a rede `app-net` explicitamente — fica mais claro do que confiar
+#   na rede `default` que o Compose criaria automaticamente.
+# - Adminer não precisa de volume — toda sessão é stateless.
+# - Pra testar Redis:
+#     docker compose exec redis redis-cli SET ola mundo
+#     docker compose exec redis redis-cli GET ola
+# - Pra testar persistência:
+#     docker compose down          (mantém volumes)
+#     docker compose up -d
+#     docker compose exec redis redis-cli GET ola   # ainda retorna "mundo"

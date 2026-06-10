@@ -1,0 +1,41 @@
+# Módulo 11 — Prática
+# Stack: Postgres + Adminer (UI web pra explorar o banco)
+#
+# Sobe com:
+#   docker compose up -d
+# Acessa Adminer em http://localhost:8080
+#   System:   PostgreSQL
+#   Server:   db          (← nome do serviço, resolve via DNS interno do Compose)
+#   Username: postgres
+#   Password: postgres
+#   Database: appdb
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: appdb
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    # Sem ports: aqui ninguém de fora precisa falar direto com o Postgres,
+    # só o Adminer (que está na mesma rede do Compose).
+    # Se quiser conectar do seu DBeaver/psql local, adicione:
+    # ports:
+    #   - "5432:5432"
+
+  adminer:
+    image: adminer:4
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    # Adminer enxerga o Postgres pelo hostname "db" (nome do serviço).
+
+volumes:
+  db_data:
+    # Volume named — persiste mesmo após `docker compose down`.
+    # Só some com `docker compose down --volumes`.

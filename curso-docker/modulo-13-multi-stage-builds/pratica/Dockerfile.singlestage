@@ -1,0 +1,12 @@
+# Dockerfile "ingênuo" — single-stage, sem otimização.
+# Usado SÓ pra comparar o tamanho com a versão multi-stage.
+#
+# Resultado esperado: imagem de ~800MB.
+
+FROM golang:1.23
+WORKDIR /app
+COPY go.mod ./
+COPY *.go ./
+RUN go build -o /servidor
+EXPOSE 8080
+CMD ["/servidor"]

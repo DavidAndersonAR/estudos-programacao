@@ -1,0 +1,23 @@
+# ✅ Dockerfile BOM — separa deps do código, cache aproveitado ao máximo.
+#
+# Truque: copia SÓ package.json + package-lock.json primeiro,
+# instala as deps, e DEPOIS copia o código.
+# Editar app.js NÃO invalida a camada de 'npm install'.
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# 1️⃣ Copia só os manifestos de dependência.
+# Estes arquivos mudam pouco (só quando você adiciona/remove biblioteca).
+COPY package*.json ./
+
+# 2️⃣ Instala deps. Esta camada fica cacheada enquanto package*.json não mudar. 🎉
+RUN npm install
+
+# 3️⃣ Agora sim, copia o resto do código.
+# Mudanças aqui NÃO invalidam o 'npm install' acima.
+COPY . .
+
+EXPOSE 3000
+CMD ["node", "app.js"]

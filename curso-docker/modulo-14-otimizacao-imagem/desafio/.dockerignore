@@ -1,0 +1,38 @@
+# Excluir do build context — manda só o essencial pro daemon
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info
+
+# Ambientes virtuais
+venv
+.venv
+env
+
+# Testes e tooling de dev (não vão pra imagem)
+tests
+.pytest_cache
+.mypy_cache
+.coverage
+htmlcov
+
+# VCS
+.git
+.gitignore
+
+# Editores
+.vscode
+.idea
+*.swp
+
+# Docker e docs
+Dockerfile*
+.dockerignore
+*.md
+comandos.sh
+
+# Ambiente local
+.env
+.env.*

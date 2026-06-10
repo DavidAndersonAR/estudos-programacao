@@ -1,0 +1,26 @@
+# ❌ Dockerfile INSEGURO — exemplos do que NÃO fazer
+# Use só pra comparar com o Dockerfile.seguro.
+
+FROM ubuntu:22.04
+
+# ❌ 1. Instala um monte de coisa que ataque adora (curl, sudo, wget)
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    sudo \
+    bash \
+    && rm -rf /var/lib/apt/lists/*
+
+# ❌ 2. Secret hardcoded em ENV (vai aparecer em docker history!)
+ENV DB_PASSWORD=supersecret123
+ENV API_TOKEN=ghp_fake_token_pra_demo
+
+# ❌ 3. Copia tudo e roda como root (default)
+COPY app.sh /app.sh
+RUN chmod +x /app.sh
+
+# ❌ 4. Sem USER → roda como root (UID 0)
+# ❌ 5. Sem HEALTHCHECK
+# ❌ 6. Tag latest implícita no FROM seria pior — pelo menos fixei 22.04
+
+CMD ["/app.sh"]

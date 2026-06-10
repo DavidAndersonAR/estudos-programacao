@@ -1,0 +1,9 @@
+{
+  "name": "spa-fake",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SPA fake pra exercitar multi-stage build com Node + nginx",
+  "scripts": {
+    "build": "node app.js"
+  }
+}
